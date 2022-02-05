@@ -1,0 +1,13 @@
+.PHONY: build test doc
+build:
+	go build ./...
+
+test:
+	go test ./...
+
+test-v:
+	go test -v ./...
+
+doc:
+	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc
+	gomarkdoc --output '{{.Dir}}/README.md' ./...
