@@ -20,17 +20,13 @@ import "github.com/go-coldbrew/data-builder"
 
 ```go
 var (
-    ErrInvalidBuilderKind         = errors.New("invalid builder kind, should only be a function")
+    ErrInvalidBuilder             = errors.New("The provided builder is invalid")
+    ErrInvalidBuilderKind         = errors.New("invalid builder, should only be a function")
     ErrInvalidBuilderNumOutput    = errors.New("invalid builder, should always return two values")
     ErrInvalidBuilderFirstOutput  = errors.New("invalid builder, first return type should be a struct")
     ErrInvalidBuilderSecondOutput = errors.New("invalid builder, second return type should be error")
     ErrInvalidBuilderInput        = errors.New("invalid builder, input should be a struct")
-)
-```
-
-```go
-var (
-    ErrInvalidBuilder = errors.New("The provided builder is invalid")
+    ErrMultipleBuilderSameOutput  = errors.New("invalid, multiple builders CAN NOT produce the same output")
 )
 ```
 
