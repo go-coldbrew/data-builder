@@ -27,6 +27,7 @@ var (
     ErrInvalidBuilderSecondOutput = errors.New("invalid builder, second return type should be error")
     ErrInvalidBuilderInput        = errors.New("invalid builder, input should be a struct")
     ErrMultipleBuilderSameOutput  = errors.New("invalid, multiple builders CAN NOT produce the same output")
+    ErrSameInputAsOutput          = errors.New("invalid builder, input and output should NOT be same")
 )
 ```
 
@@ -48,8 +49,8 @@ type Data map[string]interface{}
 
 ```go
 type DataBuilder interface {
-    AddBuilders(...interface{}) error
-    Compile() (Plan, error)
+    AddBuilders(fn ...interface{}) error
+    Compile(initialData ...interface{}) (Plan, error)
 }
 ```
 

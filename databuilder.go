@@ -1,6 +1,7 @@
 package databuilder
 
 import (
+	"errors"
 	"reflect"
 	"runtime"
 
@@ -54,15 +55,14 @@ func (d *db) add(bldr interface{}) error {
 	out := getStructName(t.Out(0))
 	name := getFuncName(bldr)
 
-	//check for outSet
-	if d.outSet.Has(out) {
-		return ErrMultipleBuilderSameOutput
-	}
-	d.outSet.Insert(out)
-
 	// check for name
 	if _, ok := d.builders[name]; ok {
 		return nil
+	}
+
+	//check for outSet
+	if d.outSet.Has(out) {
+		return ErrMultipleBuilderSameOutput
 	}
 
 	b := &builder{
@@ -73,17 +73,28 @@ func (d *db) add(bldr interface{}) error {
 		b.In = append(b.In, getStructName(t.In(i)))
 	}
 	d.builders[name] = b
+	d.outSet.Insert(out)
 	return nil
 }
 
-func (d *db) Compile() (Plan, error) {
-	order, err := resolveDependencies(d.builders)
+func (d *db) Compile(init ...interface{}) (Plan, error) {
+	initialialData := make([]string, 0, len(init))
+	for _, inter := range init {
+		if inter == nil {
+			continue
+		}
+		t := reflect.TypeOf(inter)
+		if t.Kind() != reflect.Struct {
+			return nil, errors.New("invalid initial data, needs to be struct")
+		}
+		initialialData = append(initialialData, getStructName(t))
+	}
+
+	order, err := resolveDependencies(d.builders, initialialData...)
 	if err != nil {
 		return nil, err
 	}
-	return &plan{
-		order: order,
-	}, nil
+	return newPlan(order, initialialData)
 }
 
 // IsValidBuilder checks if the given function is valid or not
@@ -113,13 +124,13 @@ func IsValidBuilder(builder interface{}) error {
 		// inputs should all be structs
 		for i := 0; i < t.NumIn(); i++ {
 			if t.In(i).Kind() != reflect.Struct {
+				// checks for vardic functions as well
 				return ErrInvalidBuilderInput
 			}
+			if getStructName(t.In(i)) == getStructName(t.Out(0)) {
+				return ErrSameInputAsOutput
+			}
 		}
-	}
-	if t.IsVariadic() {
-		// vardic functions are not supported
-		return ErrInvalidBuilderInput
 	}
 
 	return nil
