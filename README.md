@@ -10,23 +10,26 @@ import "github.com/go-coldbrew/data-builder"
 
 - [Variables](<#variables>)
 - [func IsValidBuilder(builder interface{}) error](<#func-isvalidbuilder>)
-- [type Data](<#type-data>)
 - [type DataBuilder](<#type-databuilder>)
   - [func New() DataBuilder](<#func-new>)
 - [type Plan](<#type-plan>)
+- [type Result](<#type-result>)
+  - [func (r Result) Get(obj interface{}) interface{}](<#func-result-get>)
 
 
 ## Variables
 
 ```go
 var (
-    ErrInvalidBuilder             = errors.New("The provided builder is invalid")
-    ErrInvalidBuilderKind         = errors.New("invalid builder, should only be a function")
-    ErrInvalidBuilderNumOutput    = errors.New("invalid builder, should always return two values")
-    ErrInvalidBuilderFirstOutput  = errors.New("invalid builder, first return type should be a struct")
-    ErrInvalidBuilderSecondOutput = errors.New("invalid builder, second return type should be error")
-    ErrInvalidBuilderInput        = errors.New("invalid builder, input should be a struct")
-    ErrMultipleBuilderSameOutput  = errors.New("invalid, multiple builders CAN NOT produce the same output")
+    ErrInvalidBuilder               = errors.New("The provided builder is invalid")
+    ErrInvalidBuilderKind           = errors.New("invalid builder, should only be a function")
+    ErrInvalidBuilderNumOutput      = errors.New("invalid builder, should always return two values")
+    ErrInvalidBuilderFirstOutput    = errors.New("invalid builder, first return type should be a struct")
+    ErrInvalidBuilderSecondOutput   = errors.New("invalid builder, second return type should be error")
+    ErrInvalidBuilderMissingContext = errors.New("invalid builder, missing context")
+    ErrInvalidBuilderInput          = errors.New("invalid builder, input should be a struct")
+    ErrMultipleBuilderSameOutput    = errors.New("invalid, multiple builders CAN NOT produce the same output")
+    ErrSameInputAsOutput            = errors.New("invalid builder, input and output should NOT be same")
 )
 ```
 
@@ -38,18 +41,12 @@ func IsValidBuilder(builder interface{}) error
 
 IsValidBuilder checks if the given function is valid or not
 
-## type Data
-
-```go
-type Data map[string]interface{}
-```
-
 ## type DataBuilder
 
 ```go
 type DataBuilder interface {
-    AddBuilders(...interface{}) error
-    Compile() (Plan, error)
+    AddBuilders(fn ...interface{}) error
+    Compile(initialData ...interface{}) (Plan, error)
 }
 ```
 
@@ -65,8 +62,20 @@ New Creates a new DataBuilder
 
 ```go
 type Plan interface {
-    Run(...interface{}) (Data, error)
+    Run(context.Context, ...interface{}) (Result, error)
 }
+```
+
+## type Result
+
+```go
+type Result map[string]interface{}
+```
+
+### func \(Result\) Get
+
+```go
+func (r Result) Get(obj interface{}) interface{}
 ```
 
 
