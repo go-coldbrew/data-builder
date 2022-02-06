@@ -10,14 +10,11 @@ import (
 
 type plan struct {
 	order    []*builder
-	initData sets.String            // the initial data required for this plan
-	dataMap  map[string]interface{} // map of all data
+	initData sets.String // the initial data required for this plan
 }
 
 func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error) {
-	if p.dataMap == nil {
-		p.dataMap = make(map[string]interface{})
-	}
+	dataMap := make(map[string]interface{})
 	initialData := sets.NewString()
 	for _, inter := range initData {
 		if inter == nil {
@@ -32,23 +29,23 @@ func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error)
 			return nil, ErrMultipleInitialData
 		}
 		initialData.Insert(name)
-		p.dataMap[name] = inter
+		dataMap[name] = inter
 	}
 	if p.initData.Difference(initialData).Len() > 0 {
 		return nil, ErrInitialDataMissing
 	}
-	return p.dataMap, p.run(ctx)
+	return dataMap, p.run(ctx, dataMap)
 }
 
-func (p *plan) run(ctx context.Context) error {
+func (p *plan) run(ctx context.Context, dataMap map[string]interface{}) error {
 	for i := range p.order {
 		b := p.order[i]
 		v := reflect.ValueOf(b.Builder)
 		input := make([]reflect.Value, 1)
-		ctx = AddResultToCtx(ctx, p.dataMap) // allow builders to access already built data
+		ctx = AddResultToCtx(ctx, dataMap) // allow builders to access already built data
 		input[0] = reflect.ValueOf(ctx)
 		for _, in := range b.In {
-			data, ok := p.dataMap[in]
+			data, ok := dataMap[in]
 			if !ok {
 				return errors.New("TODO: CRITICAL")
 			}
@@ -62,7 +59,7 @@ func (p *plan) run(ctx context.Context) error {
 			return outputs[1].Interface().(error)
 		}
 		name := getStructName(outputs[0].Type())
-		p.dataMap[name] = outputs[0].Interface()
+		dataMap[name] = outputs[0].Interface()
 	}
 	return nil
 }
