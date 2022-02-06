@@ -10,10 +10,11 @@ import "github.com/go-coldbrew/data-builder"
 
 - [Variables](<#variables>)
 - [func IsValidBuilder(builder interface{}) error](<#func-isvalidbuilder>)
-- [type Data](<#type-data>)
 - [type DataBuilder](<#type-databuilder>)
   - [func New() DataBuilder](<#func-new>)
 - [type Plan](<#type-plan>)
+- [type Result](<#type-result>)
+  - [func (r Result) Get(obj interface{}) interface{}](<#func-result-get>)
 
 
 ## Variables
@@ -40,12 +41,6 @@ func IsValidBuilder(builder interface{}) error
 
 IsValidBuilder checks if the given function is valid or not
 
-## type Data
-
-```go
-type Data map[string]interface{}
-```
-
 ## type DataBuilder
 
 ```go
@@ -67,8 +62,20 @@ New Creates a new DataBuilder
 
 ```go
 type Plan interface {
-    Run(...interface{}) (Data, error)
+    Run(context.Context, ...interface{}) (Result, error)
 }
+```
+
+## type Result
+
+```go
+type Result map[string]interface{}
+```
+
+### func \(Result\) Get
+
+```go
+func (r Result) Get(obj interface{}) interface{}
 ```
 
 
