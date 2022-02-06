@@ -69,6 +69,7 @@ func (d *db) add(bldr interface{}) error {
 	b := &builder{
 		Out:     out,
 		Builder: bldr,
+		Name:    name,
 	}
 	// first in context.Context so we start from second
 	for i := 1; i < t.NumIn(); i++ {

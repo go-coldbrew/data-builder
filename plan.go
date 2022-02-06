@@ -1,6 +1,7 @@
 package databuilder
 
 import (
+	"context"
 	"errors"
 	"reflect"
 
@@ -13,8 +14,11 @@ type plan struct {
 	dataMap  map[string]interface{} // map of all data
 }
 
-func (p *plan) Run(initData ...interface{}) (Data, error) {
-	initialialData := sets.NewString()
+func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error) {
+	if p.dataMap == nil {
+		p.dataMap = make(map[string]interface{})
+	}
+	initialData := sets.NewString()
 	for _, inter := range initData {
 		if inter == nil {
 			continue
@@ -24,13 +28,57 @@ func (p *plan) Run(initData ...interface{}) (Data, error) {
 			return nil, errors.New("invalid initial data, needs to be struct")
 		}
 		name := getStructName(t)
-		if initialialData.Has(name) {
+		if initialData.Has(name) {
 			return nil, errors.New("initial data provided twice")
 		}
-		initialialData.Insert(name)
+		initialData.Insert(name)
+		p.dataMap[name] = inter
 	}
-	return nil, nil
+	if p.initData.Difference(initialData).Len() > 0 {
+		return nil, errors.New("complile time defined initial data missing")
+	}
+	return p.dataMap, p.run(ctx)
+}
 
+func (p *plan) run(ctx context.Context) error {
+	for i := range p.order {
+		b := p.order[i]
+		v := reflect.ValueOf(b.Builder)
+		input := make([]reflect.Value, 1)
+		input[0] = reflect.ValueOf(ctx)
+		for _, in := range b.In {
+			data, ok := p.dataMap[in]
+			if !ok {
+				return errors.New("TODO: CRITICAL")
+			}
+			input = append(input, reflect.ValueOf(data))
+		}
+		outputs := v.Call(input)
+		// we should only ever have two outputs
+		// 0-> data, 1-> error
+		if !outputs[1].IsNil() {
+			// error occured, return it back and stop processing
+			return outputs[1].Interface().(error)
+		}
+		name := getStructName(outputs[0].Type())
+		p.dataMap[name] = outputs[0].Interface()
+	}
+	return nil
+}
+
+func (r Result) Get(obj interface{}) interface{} {
+	if obj == nil || r == nil {
+		return nil
+	}
+	t := reflect.TypeOf(obj)
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+	name := getStructName(t)
+	if value, ok := r[name]; ok {
+		return value
+	}
+	return nil
 }
 
 func newPlan(order []*builder, initData []string) (Plan, error) {

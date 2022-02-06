@@ -2,33 +2,55 @@ package databuilder
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type TestStruct1 struct {
+	Value string
 }
 
 type TestStruct2 struct {
+	Value string
 }
 
 type TestStruct3 struct {
+	Value string
 }
 
 type TestInter interface {
 }
 
-func DBTestFunc(_ context.Context, _ TestStruct1) (TestStruct2, error) {
-	return TestStruct2{}, nil
+func DBTestFunc(_ context.Context, s TestStruct1) (TestStruct2, error) {
+	fmt.Println("CALLED DBTestFunc")
+	return TestStruct2{
+		Value: strings.ReplaceAll(s.Value, "-", "_"),
+	}, nil
 }
 
 func DBTestFunc2(_ context.Context) (TestStruct1, error) {
-	return TestStruct1{}, nil
+	fmt.Println("CALLED DBTestFunc2")
+	return TestStruct1{
+		Value: "ABCD",
+	}, nil
 }
 
-func DBTestFunc3(_ context.Context, _ TestStruct2) (TestStruct1, error) {
-	return TestStruct1{}, nil
+func DBTestFunc3(_ context.Context, s TestStruct2) (TestStruct1, error) {
+	fmt.Println("CALLED DBTestFunc3")
+	return TestStruct1{
+		Value: s.Value,
+	}, nil
+}
+
+func DBTestFunc4(_ context.Context, s TestStruct1) (TestStruct3, error) {
+	fmt.Println("CALLED DBTestFunc4")
+	return TestStruct3{
+		Value: s.Value,
+	}, nil
+
 }
 
 func DBTestFuncInvalid1(_ context.Context, _ int) (TestStruct1, error) {

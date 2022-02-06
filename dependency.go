@@ -32,7 +32,12 @@ func resolveDependencies(mapping map[string]*builder, initData ...string) ([]*bu
 			return make([]*builder, 0), errors.New("dependency can not be resolved")
 		}
 		for _, v := range readyset.List() {
-			order = append(order, mapping[outputMap[v]])
+			fn, ok := outputMap[v]
+			if !ok {
+				// skip already provided fields
+				continue
+			}
+			order = append(order, mapping[fn])
 			delete(structMap, v)
 		}
 		for k, v := range structMap {

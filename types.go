@@ -1,6 +1,9 @@
 package databuilder
 
-import "errors"
+import (
+	"context"
+	"errors"
+)
 
 var (
 	ErrInvalidBuilder               = errors.New("The provided builder is invalid")
@@ -20,7 +23,7 @@ type DataBuilder interface {
 }
 
 type Plan interface {
-	Run(...interface{}) (Data, error)
+	Run(context.Context, ...interface{}) (Result, error)
 }
 
-type Data map[string]interface{}
+type Result map[string]interface{}
