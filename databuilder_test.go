@@ -7,13 +7,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	dbuild := New()
-	d, ok := dbuild.(*db)
-	if !ok {
-		assert.Fail(t, "New Should return an object of *db")
-	}
-	err := d.AddBuilders(DBTestFunc, DBTestFunc2)
-	assert.NoError(t, err)
+	testNew(t)
 }
 
 func TestValidBuilder(t *testing.T) {
@@ -34,11 +28,7 @@ func TestValidBuilder(t *testing.T) {
 }
 
 func TestAddbuilder(t *testing.T) {
-	dbuild := New()
-	d, ok := dbuild.(*db)
-	if !ok {
-		assert.Fail(t, "New Should return an object of *db")
-	}
+	d := testNew(t)
 	err := d.AddBuilders(DBTestFunc, DBTestFunc2)
 	assert.NoError(t, err)
 	err = d.AddBuilders(DBTestFunc)
@@ -53,11 +43,7 @@ func TestAddbuilder(t *testing.T) {
 }
 
 func TestCompile(t *testing.T) {
-	dbuild := New()
-	d, ok := dbuild.(*db)
-	if !ok {
-		assert.Fail(t, "New Should return an object of *db")
-	}
+	d := testNew(t)
 	err := d.AddBuilders(DBTestFunc, DBTestFunc2)
 	assert.NoError(t, err)
 	_, err = d.Compile()
@@ -69,16 +55,9 @@ func TestCompile(t *testing.T) {
 }
 
 func TestCompileCyclic(t *testing.T) {
-	dbuild := New()
-	d, ok := dbuild.(*db)
-	if !ok {
-		assert.Fail(t, "New Should return an object of *db")
-	}
+	d := testNew(t)
 	err := d.AddBuilders(DBTestFunc, DBTestFunc3)
 	assert.NoError(t, err)
 	_, err = d.Compile()
 	assert.Error(t, err, "cyclic dependency should return an error")
-}
-
-func TestPlan(t *testing.T) {
 }

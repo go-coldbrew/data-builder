@@ -1,6 +1,7 @@
 package databuilder
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"runtime"
@@ -69,7 +70,8 @@ func (d *db) add(bldr interface{}) error {
 		Out:     out,
 		Builder: bldr,
 	}
-	for i := 0; i < t.NumIn(); i++ {
+	// first in context.Context so we start from second
+	for i := 1; i < t.NumIn(); i++ {
 		b.In = append(b.In, getStructName(t.In(i)))
 	}
 	d.builders[name] = b
@@ -121,8 +123,15 @@ func IsValidBuilder(builder interface{}) error {
 		return ErrInvalidBuilderSecondOutput
 	}
 	if t.NumIn() > 0 {
-		// inputs should all be structs
-		for i := 0; i < t.NumIn(); i++ {
+		// first input should always be context.Context
+		if t.In(0).Kind() != reflect.Interface {
+			return ErrInvalidBuilderMissingContext
+		}
+		if !t.In(0).Implements(reflect.TypeOf((*context.Context)(nil)).Elem()) {
+			return ErrInvalidBuilderMissingContext
+		}
+		// other inputs should all be structs
+		for i := 1; i < t.NumIn(); i++ {
 			if t.In(i).Kind() != reflect.Struct {
 				// checks for vardic functions as well
 				return ErrInvalidBuilderInput
@@ -131,6 +140,8 @@ func IsValidBuilder(builder interface{}) error {
 				return ErrSameInputAsOutput
 			}
 		}
+	} else {
+		return ErrInvalidBuilderMissingContext
 	}
 
 	return nil
