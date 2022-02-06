@@ -77,10 +77,13 @@ func (d *db) add(bldr interface{}) error {
 }
 
 func (d *db) Compile() (Plan, error) {
-	if err := resolveDependencies(d.builders); err != nil {
+	order, err := resolveDependencies(d.builders)
+	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &plan{
+		order: order,
+	}, nil
 }
 
 // IsValidBuilder checks if the given function is valid or not
