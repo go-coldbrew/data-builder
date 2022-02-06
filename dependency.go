@@ -1,8 +1,6 @@
 package databuilder
 
 import (
-	"errors"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -29,7 +27,7 @@ func resolveDependencies(mapping map[string]*builder, initData ...string) ([]*bu
 			}
 		}
 		if readyset.Len() == 0 {
-			return make([]*builder, 0), errors.New("dependency can not be resolved")
+			return make([]*builder, 0), ErrCouldNotResolveDependency
 		}
 		for _, v := range readyset.List() {
 			fn, ok := outputMap[v]

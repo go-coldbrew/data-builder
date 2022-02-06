@@ -9,11 +9,14 @@ import "github.com/go-coldbrew/data-builder"
 ## Index
 
 - [Variables](<#variables>)
+- [func AddResultToCtx(ctx context.Context, r Result) context.Context](<#func-addresulttoctx>)
+- [func GetFromResult(ctx context.Context, obj interface{}) interface{}](<#func-getfromresult>)
 - [func IsValidBuilder(builder interface{}) error](<#func-isvalidbuilder>)
 - [type DataBuilder](<#type-databuilder>)
   - [func New() DataBuilder](<#func-new>)
 - [type Plan](<#type-plan>)
 - [type Result](<#type-result>)
+  - [func GetResultFromCtx(ctx context.Context) Result](<#func-getresultfromctx>)
   - [func (r Result) Get(obj interface{}) interface{}](<#func-result-get>)
 
 
@@ -30,8 +33,31 @@ var (
     ErrInvalidBuilderInput          = errors.New("invalid builder, input should be a struct")
     ErrMultipleBuilderSameOutput    = errors.New("invalid, multiple builders CAN NOT produce the same output")
     ErrSameInputAsOutput            = errors.New("invalid builder, input and output should NOT be same")
+    ErrCouldNotResolveDependency    = errors.New("dependency can not be resolved")
+    ErrMultipleInitialData          = errors.New("initial data provided twice")
+    ErrInitialDataMissing           = errors.New("need complile time defined initial data to run")
 )
 ```
+
+## func AddResultToCtx
+
+```go
+func AddResultToCtx(ctx context.Context, r Result) context.Context
+```
+
+### AddResultToCtx adds the given result object to context
+
+this function should ideally only be used in your tests and/or for debugging modification made to Result obj will NOT persist
+
+## func GetFromResult
+
+```go
+func GetFromResult(ctx context.Context, obj interface{}) interface{}
+```
+
+### GetFromResult allows builders to access data built by other builders
+
+this function enables optional access to data\, your code should not rely on values being present\, if you have explicit dependency please add them to your function parameters
 
 ## func IsValidBuilder
 
@@ -71,6 +97,16 @@ type Plan interface {
 ```go
 type Result map[string]interface{}
 ```
+
+### func GetResultFromCtx
+
+```go
+func GetResultFromCtx(ctx context.Context) Result
+```
+
+#### GetResultFromCtx gives access to result object at this point in execution
+
+this function should ideally only be used in your tests and/or for debugging modification made to Result obj may or may not persist
 
 ### func \(Result\) Get
 

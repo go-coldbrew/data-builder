@@ -25,17 +25,17 @@ func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error)
 		}
 		t := reflect.TypeOf(inter)
 		if t.Kind() != reflect.Struct {
-			return nil, errors.New("invalid initial data, needs to be struct")
+			return nil, ErrInvalidBuilderInput
 		}
 		name := getStructName(t)
 		if initialData.Has(name) {
-			return nil, errors.New("initial data provided twice")
+			return nil, ErrMultipleInitialData
 		}
 		initialData.Insert(name)
 		p.dataMap[name] = inter
 	}
 	if p.initData.Difference(initialData).Len() > 0 {
-		return nil, errors.New("complile time defined initial data missing")
+		return nil, ErrInitialDataMissing
 	}
 	return p.dataMap, p.run(ctx)
 }
@@ -45,6 +45,7 @@ func (p *plan) run(ctx context.Context) error {
 		b := p.order[i]
 		v := reflect.ValueOf(b.Builder)
 		input := make([]reflect.Value, 1)
+		ctx = AddResultToCtx(ctx, p.dataMap) // allow builders to access already built data
 		input[0] = reflect.ValueOf(ctx)
 		for _, in := range b.In {
 			data, ok := p.dataMap[in]

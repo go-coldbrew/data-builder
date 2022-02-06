@@ -2,7 +2,6 @@ package databuilder
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"runtime"
 
@@ -88,7 +87,7 @@ func (d *db) Compile(init ...interface{}) (Plan, error) {
 		}
 		t := reflect.TypeOf(inter)
 		if t.Kind() != reflect.Struct {
-			return nil, errors.New("invalid initial data, needs to be struct")
+			return nil, ErrInvalidBuilderInput
 		}
 		initialialData = append(initialialData, getStructName(t))
 	}

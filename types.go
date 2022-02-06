@@ -15,6 +15,9 @@ var (
 	ErrInvalidBuilderInput          = errors.New("invalid builder, input should be a struct")
 	ErrMultipleBuilderSameOutput    = errors.New("invalid, multiple builders CAN NOT produce the same output")
 	ErrSameInputAsOutput            = errors.New("invalid builder, input and output should NOT be same")
+	ErrCouldNotResolveDependency    = errors.New("dependency can not be resolved")
+	ErrMultipleInitialData          = errors.New("initial data provided twice")
+	ErrInitialDataMissing           = errors.New("need complile time defined initial data to run")
 )
 
 type DataBuilder interface {
