@@ -26,11 +26,12 @@ func TestResolveDependenciesNoError(t *testing.T) {
 	deps["Name4"] = &builder{
 		Name: "Name4",
 		In:   []string{"A"},
-		Out:  "C",
+		Out:  "D",
 	}
 
-	_, err := resolveDependencies(deps)
+	order, err := resolveDependencies(deps)
 	assert.NoError(t, err)
+	assert.Len(t, order, len(deps), "all function should be executed")
 }
 
 func TestResolveDependenciesErrorExtra(t *testing.T) {

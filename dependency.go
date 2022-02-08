@@ -1,6 +1,8 @@
 package databuilder
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -21,13 +23,16 @@ func resolveDependencies(mapping map[string]*builder, initData ...string) ([]*bu
 	readyset := sets.NewString(initData...)
 	order := make([]*builder, 0)
 	for len(structMap) > 0 {
+		blocked := sets.NewString()
 		for k, v := range structMap {
 			if v.Len() == 0 {
 				readyset.Insert(k)
+			} else {
+				blocked.Insert(v.List()...)
 			}
 		}
 		if readyset.Len() == 0 {
-			return make([]*builder, 0), ErrCouldNotResolveDependency
+			return make([]*builder, 0), fmt.Errorf("%w: missing fields %s", ErrCouldNotResolveDependency, blocked)
 		}
 		for _, v := range readyset.List() {
 			fn, ok := outputMap[v]
