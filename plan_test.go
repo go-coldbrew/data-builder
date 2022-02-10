@@ -14,20 +14,20 @@ func TestPlanRun(t *testing.T) {
 	d := testNew(t)
 	err := d.AddBuilders(DBTestFunc, DBTestFunc4)
 	assert.NoError(t, err)
-	plan, err := d.Compile(TestStruct1{})
-	assert.NotNil(t, plan)
+	executionPlan, err := d.Compile(TestStruct1{})
+	assert.NotNil(t, executionPlan)
 	assert.NoError(t, err)
 
 	ctx := context.Background()
 
-	_, err = plan.Run(ctx, 1)
+	_, err = executionPlan.Run(ctx, 1)
 	assert.Error(t, err, "initial data needs to be struct")
-	_, err = plan.Run(ctx, TestStruct1{}, TestStruct1{})
+	_, err = executionPlan.Run(ctx, TestStruct1{}, TestStruct1{})
 	assert.Error(t, err, "multiple instance of same data should not be provided")
-	_, err = plan.Run(ctx)
+	_, err = executionPlan.Run(ctx)
 	assert.Error(t, err, "missing starting data should error out")
 
-	result, err := plan.Run(ctx,
+	result, err := executionPlan.Run(ctx,
 		nil,
 		TestStruct1{
 			Value: VALUE,
@@ -47,5 +47,4 @@ func TestPlanRun(t *testing.T) {
 	ts2, ok := data.(TestStruct2)
 	assert.True(t, ok)
 	assert.Equal(t, strings.ReplaceAll(VALUE, "-", "_"), ts2.Value)
-
 }

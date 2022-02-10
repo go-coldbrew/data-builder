@@ -47,35 +47,23 @@ func (d *db) AddBuilders(builders ...interface{}) error {
 }
 
 func (d *db) add(bldr interface{}) error {
-	if err := IsValidBuilder(bldr); err != nil {
+	b, err := getBuilder(bldr)
+	if err != nil {
 		return err
 	}
 
-	t := reflect.TypeOf(bldr)
-	out := getStructName(t.Out(0))
-	name := getFuncName(bldr)
-
 	// check for name
-	if _, ok := d.builders[name]; ok {
+	if _, ok := d.builders[b.Name]; ok {
 		return nil
 	}
 
 	//check for outSet
-	if d.outSet.Has(out) {
+	if d.outSet.Has(b.Out) {
 		return ErrMultipleBuilderSameOutput
 	}
 
-	b := &builder{
-		Out:     out,
-		Builder: bldr,
-		Name:    name,
-	}
-	// first in context.Context so we start from second
-	for i := 1; i < t.NumIn(); i++ {
-		b.In = append(b.In, getStructName(t.In(i)))
-	}
-	d.builders[name] = b
-	d.outSet.Insert(out)
+	d.builders[b.Name] = b
+	d.outSet.Insert(b.Out)
 	return nil
 }
 
@@ -145,6 +133,27 @@ func IsValidBuilder(builder interface{}) error {
 	}
 
 	return nil
+}
+
+func getBuilder(bldr interface{}) (*builder, error) {
+	if err := IsValidBuilder(bldr); err != nil {
+		return nil, err
+	}
+
+	t := reflect.TypeOf(bldr)
+	out := getStructName(t.Out(0))
+	name := getFuncName(bldr)
+
+	b := &builder{
+		Out:     out,
+		Builder: bldr,
+		Name:    name,
+	}
+	// first in context.Context so we start from second
+	for i := 1; i < t.NumIn(); i++ {
+		b.In = append(b.In, getStructName(t.In(i)))
+	}
+	return b, nil
 }
 
 func getFuncName(bldr interface{}) string {

@@ -26,7 +26,8 @@ type DataBuilder interface {
 }
 
 type Plan interface {
-	Run(context.Context, ...interface{}) (Result, error)
+	Replace(ctx context.Context, from, to interface{}) error
+	Run(ctx context.Context, initValues ...interface{}) (Result, error)
 }
 
 type Result map[string]interface{}

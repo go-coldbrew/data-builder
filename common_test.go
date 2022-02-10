@@ -50,7 +50,13 @@ func DBTestFunc4(_ context.Context, s TestStruct1) (TestStruct3, error) {
 	return TestStruct3{
 		Value: s.Value,
 	}, nil
+}
 
+func DBTestFunc5(_ context.Context, s TestStruct1) (TestStruct2, error) {
+	fmt.Println("CALLED DBTestFunc5")
+	return TestStruct2{
+		Value: strings.ReplaceAll(s.Value, "-", "--"),
+	}, nil
 }
 
 func DBTestFuncInvalid1(_ context.Context, _ int) (TestStruct1, error) {
