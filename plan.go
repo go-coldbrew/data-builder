@@ -121,6 +121,11 @@ func (r Result) Get(obj interface{}) interface{} {
 }
 
 func (p plan) BuildGraph(format, file string) error {
+	const (
+		FNCOLOR     = "red"
+		STRUCTCOLOR = "blue"
+	)
+
 	g := graphviz.New()
 	graph, err := g.Graph(graphviz.Name("Dependency Graph"))
 	if err != nil {
@@ -132,16 +137,19 @@ func (p plan) BuildGraph(format, file string) error {
 		if err != nil {
 			return err
 		}
+		fn = fn.SetFontColor(FNCOLOR)
 		out, err := graph.CreateNode(b.Out)
 		if err != nil {
 			return err
 		}
+		out = out.SetFontColor(STRUCTCOLOR)
 		graph.CreateEdge("Out", fn, out)
 		for _, in := range b.In {
 			in, err := graph.CreateNode(in)
 			if err != nil {
 				return err
 			}
+			in = in.SetFontColor(STRUCTCOLOR)
 			graph.CreateEdge("In", in, fn)
 		}
 	}

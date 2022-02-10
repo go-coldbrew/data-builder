@@ -2,6 +2,7 @@ package databuilder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -47,4 +48,31 @@ func TestPlanRun(t *testing.T) {
 	ts2, ok := data.(TestStruct2)
 	assert.True(t, ok)
 	assert.Equal(t, strings.ReplaceAll(VALUE, "-", "_"), ts2.Value)
+}
+
+func ExamplePlan() {
+	b := New()
+	err := b.AddBuilders(DBTestFunc, DBTestFunc4)
+	fmt.Println(err == nil)
+	ep, err := b.Compile(TestStruct1{})
+	fmt.Println(err == nil)
+
+	_, err = ep.Run(context.Background(), TestStruct1{})
+	fmt.Println(err == nil)
+
+	err = ep.Replace(context.Background(), DBTestFunc, DBTestFunc5)
+	fmt.Println(err == nil)
+	_, err = ep.Run(context.Background(), TestStruct1{})
+	fmt.Println(err == nil)
+
+	// Output:
+	// true
+	// true
+	// CALLED DBTestFunc
+	// CALLED DBTestFunc4
+	// true
+	// true
+	// CALLED DBTestFunc5
+	// CALLED DBTestFunc4
+	// true
 }
