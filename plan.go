@@ -142,9 +142,8 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 		w.wg = &wg
 		w.dataMap = dataMap
 		w.out = outChan
-
-		wChan <- w // send work to be done by workers
 		wg.Add(1)  // increment count
+		wChan <- w // send work to be done by workers
 	}
 	wg.Wait() // wait for work to be processed
 	close(outChan)
