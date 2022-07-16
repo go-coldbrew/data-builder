@@ -28,6 +28,7 @@ type DataBuilder interface {
 type Plan interface {
 	Replace(ctx context.Context, from, to interface{}) error
 	Run(ctx context.Context, initValues ...interface{}) (Result, error)
+	RunParallel(ctx context.Context, count uint, initValues ...interface{}) (Result, error)
 }
 
 type Result map[string]interface{}

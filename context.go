@@ -14,7 +14,7 @@ func AddResultToCtx(ctx context.Context, r Result) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return context.WithValue(ctx, pKey, r)
+	return context.WithValue(ctx, pKey, &r)
 }
 
 // GetResultFromCtx gives access to result object at this point in execution
@@ -26,8 +26,8 @@ func GetResultFromCtx(ctx context.Context) Result {
 	if v == nil {
 		return nil
 	}
-	if r, ok := v.(Result); ok {
-		return r
+	if r, ok := v.(*Result); ok {
+		return *r
 	}
 	return nil
 }

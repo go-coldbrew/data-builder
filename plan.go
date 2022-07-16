@@ -4,13 +4,19 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strconv"
+	"sync"
 
 	graphviz "github.com/goccy/go-graphviz"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+var (
+	ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
+)
+
 type plan struct {
-	order    []*builder
+	order    [][]*builder
 	initData sets.String // the initial data required for this plan
 }
 
@@ -40,17 +46,23 @@ func (p *plan) Replace(ctx context.Context, from interface{}, to interface{}) er
 	}
 
 	for i := range p.order {
-		b := p.order[i]
-		if f.Name == b.Name {
-			// same function, lets replace it
-			p.order[i] = t
-			return nil
+		for j := range p.order[i] {
+			b := p.order[i][j]
+			if f.Name == b.Name {
+				// same function, lets replace it
+				p.order[i][j] = t
+				return nil
+			}
 		}
 	}
 	return errors.New("builder not found")
 }
 
 func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error) {
+	return p.RunParallel(ctx, 1, initData...)
+}
+
+func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...interface{}) (Result, error) {
 	dataMap := make(map[string]interface{})
 	initialData := sets.NewString()
 	for _, inter := range initData {
@@ -71,36 +83,105 @@ func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error)
 	if p.initData.Difference(initialData).Len() > 0 {
 		return nil, ErrInitialDataMissing
 	}
-	return dataMap, p.run(ctx, dataMap)
+	return dataMap, p.run(ctx, workers, dataMap)
 }
 
-func (p *plan) run(ctx context.Context, dataMap map[string]interface{}) error {
-	for i := range p.order {
-		b := p.order[i]
+type work struct {
+	out     chan<- output
+	wg      *sync.WaitGroup
+	builder *builder
+	dataMap map[string]interface{}
+}
+
+type output struct {
+	outputs []reflect.Value
+	builder *builder
+	err     error
+}
+
+func worker(ctx context.Context, wChan <-chan work) {
+	for w := range wChan {
+		processWork(ctx, w)
+	}
+}
+
+func processWork(ctx context.Context, w work) {
+	defer w.wg.Done() // ensure we close wait group
+	o := output{builder: w.builder}
+	fn := reflect.ValueOf(w.builder.Builder)
+	args := make([]reflect.Value, 1)
+	args[0] = reflect.ValueOf(ctx) // first arg is context.Context
+	for _, in := range w.builder.In {
+		data, ok := w.dataMap[in]
+		if !ok {
+			o.err = ErrWTF
+			w.out <- o
+			return
+		}
+		args = append(args, reflect.ValueOf(data))
+	}
+	o.outputs = fn.Call(args)
+	w.out <- o
+}
+
+func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[string]interface{}, wChan chan<- work) error {
+	// create a output channel to read results
+	outChan := make(chan output, len(builders)+1)
+	// create a wait group to wait for all results
+	var wg sync.WaitGroup
+	ctx = AddResultToCtx(ctx, dataMap) // allow builders to access already built data
+	for j := range builders {
+		b := builders[j]
 		if _, ok := dataMap[b.Out]; ok {
 			// do not run the builder if the data already exists
 			continue
 		}
-		v := reflect.ValueOf(b.Builder)
-		input := make([]reflect.Value, 1)
-		ctx = AddResultToCtx(ctx, dataMap) // allow builders to access already built data
-		input[0] = reflect.ValueOf(ctx)
-		for _, in := range b.In {
-			data, ok := dataMap[in]
-			if !ok {
-				return errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
-			}
-			input = append(input, reflect.ValueOf(data))
+		// build work
+		w := work{}
+		w.builder = b
+		w.wg = &wg
+		w.dataMap = dataMap
+		w.out = outChan
+
+		wChan <- w // send work to be done by workers
+		wg.Add(1)  // increment count
+	}
+	wg.Wait() // wait for work to be processed
+	close(outChan)
+	for o := range outChan {
+		if o.err != nil {
+			return o.err
 		}
-		outputs := v.Call(input)
+		outputs := o.outputs
 		// we should only ever have two outputs
 		// 0-> data, 1-> error
 		if !outputs[1].IsNil() {
 			// error occured, return it back and stop processing
 			return outputs[1].Interface().(error)
 		}
+		// add result
 		name := getStructName(outputs[0].Type())
 		dataMap[name] = outputs[0].Interface()
+	}
+	return nil
+}
+
+func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interface{}) error {
+	if workers == 0 {
+		workers = 1
+	}
+
+	// create a work channel and start workers
+	wChan := make(chan work, 0)
+	for i := uint(0); i < workers; i++ {
+		go worker(ctx, wChan)
+	}
+
+	for i := range p.order {
+		err := doWorkAndGetResult(ctx, p.order[i], dataMap, wChan)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -132,31 +213,33 @@ func (p plan) BuildGraph(format, file string) error {
 		return err
 	}
 	for i := range p.order {
-		b := p.order[i]
-		fn, err := graph.CreateNode(b.Name)
-		if err != nil {
-			return err
-		}
-		fn = fn.SetFontColor(FNCOLOR)
-		out, err := graph.CreateNode(b.Out)
-		if err != nil {
-			return err
-		}
-		out = out.SetFontColor(STRUCTCOLOR)
-		graph.CreateEdge("Out", fn, out)
-		for _, in := range b.In {
-			in, err := graph.CreateNode(in)
+		for j := range p.order[i] {
+			b := p.order[i][j]
+			fn, err := graph.CreateNode(b.Name + " [" + strconv.Itoa(i) + "]") // here [] denotes order
 			if err != nil {
 				return err
 			}
-			in = in.SetFontColor(STRUCTCOLOR)
-			graph.CreateEdge("In", in, fn)
+			fn = fn.SetFontColor(FNCOLOR)
+			out, err := graph.CreateNode(b.Out)
+			if err != nil {
+				return err
+			}
+			out = out.SetFontColor(STRUCTCOLOR)
+			graph.CreateEdge("Out", fn, out)
+			for _, in := range b.In {
+				in, err := graph.CreateNode(in)
+				if err != nil {
+					return err
+				}
+				in = in.SetFontColor(STRUCTCOLOR)
+				graph.CreateEdge("In", in, fn)
+			}
 		}
 	}
 	return g.RenderFilename(graph, graphviz.Format(format), file)
 }
 
-func newPlan(order []*builder, initData []string) (Plan, error) {
+func newPlan(order [][]*builder, initData []string) (Plan, error) {
 	return &plan{
 		order:    order,
 		initData: sets.NewString(initData...),

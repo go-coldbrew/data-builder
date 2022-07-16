@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/goccy/go-graphviz v0.0.9
+	github.com/google/go-cmp v0.5.8
 	github.com/princjef/gomarkdoc v0.3.1
 	github.com/stretchr/testify v1.7.0
 	k8s.io/apimachinery v0.23.3
