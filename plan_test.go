@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 func TestPlanRun(t *testing.T) {
@@ -48,6 +49,7 @@ func TestPlanRun(t *testing.T) {
 	ts2, ok := data.(TestStruct2)
 	assert.True(t, ok)
 	assert.Equal(t, strings.ReplaceAll(VALUE, "-", "_"), ts2.Value)
+	goleak.VerifyNone(t)
 }
 
 func ExamplePlan() {

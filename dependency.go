@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func resolveDependencies(mapping map[string]*builder, initData ...string) ([]*builder, error) {
+func resolveDependencies(mapping map[string]*builder, initData ...string) ([][]*builder, error) {
 	/*
 	 * dependency resolution is NP problem, lets see what we can do
 	 */
@@ -21,7 +21,7 @@ func resolveDependencies(mapping map[string]*builder, initData ...string) ([]*bu
 	}
 
 	readyset := sets.NewString(initData...)
-	order := make([]*builder, 0)
+	order := make([][]*builder, 0)
 	for len(structMap) > 0 {
 		blocked := sets.NewString()
 		for k, v := range structMap {
@@ -32,17 +32,19 @@ func resolveDependencies(mapping map[string]*builder, initData ...string) ([]*bu
 			}
 		}
 		if readyset.Len() == 0 {
-			return make([]*builder, 0), fmt.Errorf("%w: missing fields %s", ErrCouldNotResolveDependency, blocked)
+			return make([][]*builder, 0), fmt.Errorf("%w: missing fields %s", ErrCouldNotResolveDependency, blocked)
 		}
+		o := make([]*builder, 0)
 		for _, v := range readyset.List() {
 			fn, ok := outputMap[v]
 			if !ok {
 				// skip already provided fields
 				continue
 			}
-			order = append(order, mapping[fn])
+			o = append(o, mapping[fn])
 			delete(structMap, v)
 		}
+		order = append(order, o)
 		for k, v := range structMap {
 			diff := v.Difference(readyset)
 			structMap[k] = diff
