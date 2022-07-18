@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	// ErrWTF is the error returned in case we find dependency resolution related errors, please report these
 	ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
 )
 
@@ -253,4 +254,23 @@ func BuildGraph(executionPlan Plan, format, file string) error {
 		return p.BuildGraph(format, file)
 	}
 	return errors.New("could not find graph builder")
+}
+
+// MaxPlanParallelism return the maximum number of buildes that can be exsecuted parallely
+// for a given plan
+//
+// this number does not take into account if the builder are cpu intensive or netwrok intensive
+// it may not be benificial to run builders at max parallelism if they are cpu intensive
+func MaxPlanParallelism(pl Plan) (uint, error) {
+	p, ok := pl.(*plan)
+	if !ok {
+		return 0, errors.New("could not find plan created by data-builder")
+	}
+	max := 1
+	for _, order := range p.order {
+		if len(order) > max {
+			max = len(order)
+		}
+	}
+	return uint(max), nil
 }

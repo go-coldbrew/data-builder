@@ -13,6 +13,7 @@ import "github.com/go-coldbrew/data-builder"
 - [func BuildGraph(executionPlan Plan, format, file string) error](<#func-buildgraph>)
 - [func GetFromResult(ctx context.Context, obj interface{}) interface{}](<#func-getfromresult>)
 - [func IsValidBuilder(builder interface{}) error](<#func-isvalidbuilder>)
+- [func MaxPlanParallelism(pl Plan) (uint, error)](<#func-maxplanparallelism>)
 - [type DataBuilder](<#type-databuilder>)
   - [func New() DataBuilder](<#func-new>)
 - [type Plan](<#type-plan>)
@@ -37,6 +38,13 @@ var (
     ErrCouldNotResolveDependency    = errors.New("dependency can not be resolved")
     ErrMultipleInitialData          = errors.New("initial data provided twice")
     ErrInitialDataMissing           = errors.New("need complile time defined initial data to run")
+)
+```
+
+```go
+var (
+    // ErrWTF is the error returned in case we find dependency resolution related errors, please report these
+    ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
 )
 ```
 
@@ -75,6 +83,17 @@ func IsValidBuilder(builder interface{}) error
 ```
 
 IsValidBuilder checks if the given function is valid or not
+
+## func MaxPlanParallelism
+
+```go
+func MaxPlanParallelism(pl Plan) (uint, error)
+```
+
+### MaxPlanParallelism return the maximum number of buildes that can be exsecuted parallely
+for a given plan
+
+this number does not take into account if the builder are cpu intensive or netwrok intensive it may not be benificial to run builders at max parallelism if they are cpu intensive
 
 ## type DataBuilder
 
@@ -246,6 +265,7 @@ New Creates a new DataBuilder
 type Plan interface {
     Replace(ctx context.Context, from, to interface{}) error
     Run(ctx context.Context, initValues ...interface{}) (Result, error)
+    RunParallel(ctx context.Context, count uint, initValues ...interface{}) (Result, error)
 }
 ```
 
