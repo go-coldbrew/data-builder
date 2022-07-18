@@ -172,6 +172,7 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interfa
 
 	// create a work channel and start workers
 	wChan := make(chan work, 0)
+	defer close(wChan)
 	for i := uint(0); i < workers; i++ {
 		go worker(ctx, wChan)
 	}

@@ -7,6 +7,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/princjef/gomarkdoc v0.3.1
 	github.com/stretchr/testify v1.7.0
+	go.uber.org/goleak v1.1.12
 	k8s.io/apimachinery v0.23.3
 )
 
