@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/go-coldbrew/tracing"
 	graphviz "github.com/goccy/go-graphviz"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -111,6 +112,8 @@ func processWork(ctx context.Context, w work) {
 	o := output{builder: w.builder}
 	fn := reflect.ValueOf(w.builder.Builder)
 	args := make([]reflect.Value, 1)
+	trace, ctx := tracing.NewInternalSpan(ctx, w.builder.Name)
+	defer trace.End()
 	args[0] = reflect.ValueOf(ctx) // first arg is context.Context
 	for _, in := range w.builder.In {
 		data, ok := w.dataMap[in]
