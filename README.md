@@ -64,7 +64,7 @@ this function should ideally only be used in your tests and/or for debugging mod
 func BuildGraph(executionPlan Plan, format, file string) error
 ```
 
-BuildGraph helps understand the execution plan\, it renders the plan in the given format please note we depend on graphviz\, please ensure you have graphviz installed
+BuildGraph helps understand the execution plan, it renders the plan in the given format please note we depend on graphviz, please ensure you have graphviz installed
 
 ## func GetFromResult
 
@@ -74,7 +74,7 @@ func GetFromResult(ctx context.Context, obj interface{}) interface{}
 
 ### GetFromResult allows builders to access data built by other builders
 
-this function enables optional access to data\, your code should not rely on values being present\, if you have explicit dependency please add them to your function parameters
+this function enables optional access to data, your code should not rely on values being present, if you have explicit dependency please add them to your function parameters
 
 ## func IsValidBuilder
 
@@ -155,7 +155,7 @@ func NameMsgBuilder(_ context.Context, req AppRequest) (NameMsg, error) {
 	}, nil
 }
 
-//CityMsgBuilder builds city welcome msg from our AppRequest
+// CityMsgBuilder builds city welcome msg from our AppRequest
 func CityMsgBuilder(_ context.Context, req AppRequest) (CityMsg, error) {
 	return CityMsg{
 		Msg: fmt.Sprintf("Welcome to %s", req.CityName),
@@ -175,7 +175,7 @@ func CaseMsgBuilder(_ context.Context, name NameMsg, city CityMsg, req AppReques
 	}, nil
 }
 
-//ResponseBuilder builds Application response from CaseMsg
+// ResponseBuilder builds Application response from CaseMsg
 func ResponseBuilder(_ context.Context, m CaseMsg) (AppResponse, error) {
 	return AppResponse{
 		Msg: m.Msg,
