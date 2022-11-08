@@ -61,10 +61,18 @@ func (p *plan) Replace(ctx context.Context, from interface{}, to interface{}) er
 }
 
 func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error) {
-	return p.RunParallel(ctx, 1, initData...)
+	span, ctx := tracing.NewInternalSpan(ctx, "DBRun")
+	defer span.End()
+	r, err := p.RunParallel(ctx, 1, initData...)
+	if err != nil {
+		span.SetError(err)
+	}
+	return r, err
 }
 
 func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...interface{}) (Result, error) {
+	span, ctx := tracing.NewInternalSpan(ctx, "DBRunParallel")
+	defer span.End()
 	dataMap := make(map[string]interface{})
 	initialData := sets.NewString()
 	for _, inter := range initData {
@@ -82,10 +90,11 @@ func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...interf
 		initialData.Insert(name)
 		dataMap[name] = inter
 	}
+	span.SetTag("workers", workers)
 	if p.initData.Difference(initialData).Len() > 0 {
-		return nil, ErrInitialDataMissing
+		return nil, span.SetError(ErrInitialDataMissing)
 	}
-	return dataMap, p.run(ctx, workers, dataMap)
+	return dataMap, span.SetError(p.run(ctx, workers, dataMap))
 }
 
 type work struct {
