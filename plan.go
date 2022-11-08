@@ -125,6 +125,9 @@ func processWork(ctx context.Context, w work) {
 		args = append(args, reflect.ValueOf(data))
 	}
 	o.outputs = fn.Call(args)
+	if len(o.outputs) > 1 && !o.outputs[1].IsNil() {
+		trace.SetError(o.outputs[1].Interface().(error))
+	}
 	w.out <- o
 }
 
