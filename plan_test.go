@@ -56,7 +56,7 @@ func TestPlanRunPartialSuccess(t *testing.T) {
 	const VALUE = "9F0D8E07-6C46-48B7-983C-5C309C042CC6"
 
 	d := testNew(t)
-	err := d.AddBuilders(DBTestFunc, DBTestFunc6)
+	err := d.AddBuilders(DBTestFunc6, DBTestFuncErr)
 	assert.NoError(t, err)
 	executionPlan, err := d.Compile(TestStruct1{})
 	assert.NotNil(t, executionPlan)
@@ -68,17 +68,17 @@ func TestPlanRunPartialSuccess(t *testing.T) {
 			Value: VALUE,
 		},
 	)
-	assert.Error(t, err, "DBTestFunc6 encounterd an error")
+	assert.Error(t, err, "DBTestFunc encounterd an error")
+
 	var t2 TestStruct2
 	data := result.Get(t2)
-	assert.NotNil(t, data)
-	ts2, ok := data.(TestStruct2)
-	assert.True(t, ok)
-	assert.Equal(t, strings.ReplaceAll(VALUE, "-", "_"), ts2.Value)
+	assert.Nil(t, data)
 
 	var t3 TestStruct3
 	data = result.Get(t3)
-	assert.Nil(t, data)
+	assert.NotNil(t, data)
+	_, ok := data.(TestStruct3)
+	assert.True(t, ok)
 
 	goleak.VerifyNone(t)
 }
