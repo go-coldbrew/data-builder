@@ -163,6 +163,7 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	}
 	wg.Wait() // wait for work to be processed
 	close(outChan)
+	errs := make([]error, 0)
 	for o := range outChan {
 		if o.err != nil {
 			return o.err
@@ -172,11 +173,17 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 		// 0-> data, 1-> error
 		if !outputs[1].IsNil() {
 			// error occured, return it back and stop processing
-			return outputs[1].Interface().(error)
+			errs = append(errs, outputs[1].Interface().(error))
+			continue
 		}
 		// add result
 		name := getStructName(outputs[0].Type())
 		dataMap[name] = outputs[0].Interface()
+	}
+	if len(errs) > 0 {
+		// we only return the first error
+		// TODO enhance error handling
+		return errs[0]
 	}
 	return nil
 }
