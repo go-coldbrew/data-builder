@@ -28,7 +28,7 @@ func DBTestFunc(_ context.Context, s TestStruct1) (TestStruct2, error) {
 	fmt.Println("CALLED DBTestFunc")
 	return TestStruct2{
 		Value: strings.ReplaceAll(s.Value, "-", "_"),
-	}, fmt.Errorf("DBTestFunc6 encountered an error")
+	}, nil
 }
 
 func DBTestFunc2(_ context.Context) (TestStruct1, error) {
