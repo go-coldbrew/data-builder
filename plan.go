@@ -200,11 +200,17 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interfa
 		go worker(ctx, wChan)
 	}
 
+	errs := make([]error, 0)
 	for i := range p.order {
 		err := doWorkAndGetResult(ctx, p.order[i], dataMap, wChan)
 		if err != nil {
-			return err
+			errs = append(errs, err)
 		}
+	}
+	if len(errs) > 0 {
+		// we only return the first error
+		// TODO enhance error handling
+		return errs[0]
 	}
 	return nil
 }
