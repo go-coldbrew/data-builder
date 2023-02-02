@@ -21,6 +21,14 @@ type TestStruct3 struct {
 	Value string
 }
 
+type TestStruct4 struct {
+	Value string
+}
+
+type TestStruct5 struct {
+	Value string
+}
+
 type TestInter interface {
 }
 
@@ -56,6 +64,34 @@ func DBTestFunc5(_ context.Context, s TestStruct1) (TestStruct2, error) {
 	fmt.Println("CALLED DBTestFunc5")
 	return TestStruct2{
 		Value: strings.ReplaceAll(s.Value, "-", "--"),
+	}, nil
+}
+
+func DBTestFunc6(_ context.Context, s TestStruct1) (TestStruct3, error) {
+	fmt.Println("CALLED DBTestFunc6")
+	return TestStruct3{
+		Value: s.Value,
+	}, nil
+}
+
+func DBTestFunc7(_ context.Context, s TestStruct3) (TestStruct4, error) {
+	fmt.Println("CALLED DBTestFunc7")
+	return TestStruct4{
+		Value: s.Value,
+	}, nil
+}
+
+func DBTestFuncErr(_ context.Context, s TestStruct1) (TestStruct2, error) {
+	fmt.Println("CALLED DBTestFuncErr")
+	return TestStruct2{
+		Value: s.Value,
+	}, fmt.Errorf("DBTestFunc encountered an error")
+}
+
+func DBTestFuncAfterErr(_ context.Context, s TestStruct2) (TestStruct5, error) {
+	fmt.Println("CALLED DBTestFuncAfterErr")
+	return TestStruct5{
+		Value: s.Value,
 	}, nil
 }
 
