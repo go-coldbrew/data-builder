@@ -215,6 +215,8 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interfa
 	return nil
 }
 
+// Result.Get returns the value of the struct from the result
+// if the struct is not found in the result, nil is returned
 func (r Result) Get(obj interface{}) interface{} {
 	if obj == nil || r == nil {
 		return nil
@@ -230,6 +232,7 @@ func (r Result) Get(obj interface{}) interface{} {
 	return nil
 }
 
+// BuildGraph builds a graphviz graph of the dependency graph of the plan and writes it to the file specified.
 func (p plan) BuildGraph(format, file string) error {
 	const (
 		FNCOLOR     = "red"

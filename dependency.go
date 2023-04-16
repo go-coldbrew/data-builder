@@ -6,6 +6,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+// resolveDependencies resolves the dependencies between the builders
+// and returns the order in which the builders should be executed.
+// The order is a list of lists of builders. Each list of builders
+// can be executed in parallel. The order of the lists is the order
+// in which the builders should be executed.
+// The function returns an error if the dependencies cannot be resolved.
 func resolveDependencies(mapping map[string]*builder, initData ...string) ([][]*builder, error) {
 	/*
 	 * dependency resolution is NP problem, lets see what we can do
