@@ -53,11 +53,10 @@ var (
 )
 ```
 
+ErrWTF is the error returned in case we find dependency resolution related errors, please report these
+
 ```go
-var (
-    // ErrWTF is the error returned in case we find dependency resolution related errors, please report these
-    ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
-)
+var ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
 ```
 
 ## func AddResultToCtx
