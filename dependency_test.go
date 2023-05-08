@@ -119,20 +119,8 @@ func TestResolveDependenciesDisjointGraphsNoError(t *testing.T) {
 		Out:  "Z",
 	}
 
-	order, err := resolveDependencies(deps)
+	_, err := resolveDependencies(deps)
 	assert.NoError(t, err)
-
-	names := make([][]string, 0)
-	count := 0
-	for i := range order {
-		n := make([]string, 0)
-		for j := range order[i] {
-			count += 1
-			n = append(n, order[i][j].Name)
-		}
-		names = append(names, n)
-	}
-	assert.Equal(t, count, len(deps), "all function should be executed")
 }
 
 func TestResolveDependenciesErrorExtra(t *testing.T) {

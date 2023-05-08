@@ -2,8 +2,12 @@ package databuilder
 
 import "context"
 
+// key our custom type to avoid collision with other packages using context
+type key string
+
 const (
-	pKey = "github.com/coldebrew-go/data-builder.Result"
+	// pKey is the key used to store Result obj in context
+	pKey key = "github.com/coldebrew-go/data-builder.Result"
 )
 
 // AddResultToCtx adds the given result object to context

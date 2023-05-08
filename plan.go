@@ -12,10 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var (
-	// ErrWTF is the error returned in case we find dependency resolution related errors, please report these
-	ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
-)
+// ErrWTF is the error returned in case we find dependency resolution related errors, please report these
+var ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
 
 type plan struct {
 	order    [][]*builder
@@ -64,10 +62,7 @@ func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error)
 	span, ctx := tracing.NewInternalSpan(ctx, "DBRun")
 	defer span.End()
 	r, err := p.RunParallel(ctx, 1, initData...)
-	if err != nil {
-		span.SetError(err)
-	}
-	return r, err
+	return r, span.SetError(err)
 }
 
 func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...interface{}) (Result, error) {
@@ -118,11 +113,20 @@ func worker(ctx context.Context, wChan <-chan work) {
 
 func processWork(ctx context.Context, w work) {
 	defer w.wg.Done() // ensure we close wait group
+	span, ctx := tracing.NewInternalSpan(ctx, w.builder.Name)
+	defer span.End()
 	o := output{builder: w.builder}
+	defer func() {
+		// recover from panic and set error
+		if r := recover(); r != nil {
+			o.err = span.SetError(errors.New("panic in builder: " + w.builder.Name))
+			w.out <- o
+		}
+	}()
 	fn := reflect.ValueOf(w.builder.Builder)
+	// allow builders to access already built data
+	ctx = AddResultToCtx(ctx, w.dataMap)
 	args := make([]reflect.Value, 1)
-	trace, ctx := tracing.NewInternalSpan(ctx, w.builder.Name)
-	defer trace.End()
 	args[0] = reflect.ValueOf(ctx) // first arg is context.Context
 	for _, in := range w.builder.In {
 		data, ok := w.dataMap[in]
@@ -135,7 +139,7 @@ func processWork(ctx context.Context, w work) {
 	}
 	o.outputs = fn.Call(args)
 	if len(o.outputs) > 1 && !o.outputs[1].IsNil() {
-		trace.SetError(o.outputs[1].Interface().(error))
+		span.SetError(o.outputs[1].Interface().(error)) // nolint: errcheck
 	}
 	w.out <- o
 }
@@ -145,7 +149,6 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	outChan := make(chan output, len(builders)+1)
 	// create a wait group to wait for all results
 	var wg sync.WaitGroup
-	ctx = AddResultToCtx(ctx, dataMap) // allow builders to access already built data
 	for j := range builders {
 		b := builders[j]
 		if _, ok := dataMap[b.Out]; ok {
@@ -166,13 +169,14 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	errs := make([]error, 0)
 	for o := range outChan {
 		if o.err != nil {
+			// error occured, return it back and stop processing
 			return o.err
 		}
 		outputs := o.outputs
 		// we should only ever have two outputs
 		// 0-> data, 1-> error
 		if !outputs[1].IsNil() {
-			// error occured, return it back and stop processing
+			// error occured, add it to the list of errors and continue processing
 			errs = append(errs, outputs[1].Interface().(error))
 			continue
 		}
@@ -194,7 +198,7 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interfa
 	}
 
 	// create a work channel and start workers
-	wChan := make(chan work, 0)
+	wChan := make(chan work)
 	defer close(wChan)
 	for i := uint(0); i < workers; i++ {
 		go worker(ctx, wChan)
@@ -257,14 +261,20 @@ func (p plan) BuildGraph(format, file string) error {
 				return err
 			}
 			out = out.SetFontColor(STRUCTCOLOR)
-			graph.CreateEdge("Out", fn, out)
+			_, err = graph.CreateEdge("Out", fn, out)
+			if err != nil {
+				return err
+			}
 			for _, in := range b.In {
 				in, err := graph.CreateNode(in)
 				if err != nil {
 					return err
 				}
 				in = in.SetFontColor(STRUCTCOLOR)
-				graph.CreateEdge("In", in, fn)
+				_, err = graph.CreateEdge("In", in, fn)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
