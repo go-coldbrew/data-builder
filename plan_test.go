@@ -60,6 +60,7 @@ func TestPlanRunPartialSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	executionPlan, err := d.Compile(TestStruct1{})
 	assert.NotNil(t, executionPlan)
+	assert.NoError(t, err)
 
 	ctx := context.Background()
 
