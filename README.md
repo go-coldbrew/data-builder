@@ -9,20 +9,22 @@ import "github.com/go-coldbrew/data-builder"
 ## Index
 
 - [Variables](<#variables>)
-- [func AddResultToCtx(ctx context.Context, r Result) context.Context](<#func-addresulttoctx>)
-- [func BuildGraph(executionPlan Plan, format, file string) error](<#func-buildgraph>)
-- [func GetFromResult(ctx context.Context, obj interface{}) interface{}](<#func-getfromresult>)
-- [func IsValidBuilder(builder interface{}) error](<#func-isvalidbuilder>)
-- [func MaxPlanParallelism(pl Plan) (uint, error)](<#func-maxplanparallelism>)
-- [type DataBuilder](<#type-databuilder>)
-  - [func New() DataBuilder](<#func-new>)
-- [type Plan](<#type-plan>)
-- [type Result](<#type-result>)
-  - [func GetResultFromCtx(ctx context.Context) Result](<#func-getresultfromctx>)
-  - [func (r Result) Get(obj interface{}) interface{}](<#func-result-get>)
+- [func AddResultToCtx\(ctx context.Context, r Result\) context.Context](<#AddResultToCtx>)
+- [func BuildGraph\(executionPlan Plan, format, file string\) error](<#BuildGraph>)
+- [func GetFromResult\(ctx context.Context, obj interface\{\}\) interface\{\}](<#GetFromResult>)
+- [func IsValidBuilder\(builder interface\{\}\) error](<#IsValidBuilder>)
+- [func MaxPlanParallelism\(pl Plan\) \(uint, error\)](<#MaxPlanParallelism>)
+- [type DataBuilder](<#DataBuilder>)
+  - [func New\(\) DataBuilder](<#New>)
+- [type Plan](<#Plan>)
+- [type Result](<#Result>)
+  - [func GetResultFromCtx\(ctx context.Context\) Result](<#GetResultFromCtx>)
+  - [func \(r Result\) Get\(obj interface\{\}\) interface\{\}](<#Result.Get>)
 
 
 ## Variables
+
+<a name="ErrInvalidBuilder"></a>
 
 ```go
 var (
@@ -53,22 +55,24 @@ var (
 )
 ```
 
-ErrWTF is the error returned in case we find dependency resolution related errors, please report these
+<a name="ErrWTF"></a>ErrWTF is the error returned in case we find dependency resolution related errors, please report these
 
 ```go
 var ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in dependency resolution, please report this :|")
 ```
 
+<a name="AddResultToCtx"></a>
 ## func AddResultToCtx
 
 ```go
 func AddResultToCtx(ctx context.Context, r Result) context.Context
 ```
 
-### AddResultToCtx adds the given result object to context
+AddResultToCtx adds the given result object to context
 
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj will NOT persist
 
+<a name="BuildGraph"></a>
 ## func BuildGraph
 
 ```go
@@ -77,16 +81,18 @@ func BuildGraph(executionPlan Plan, format, file string) error
 
 BuildGraph helps understand the execution plan, it renders the plan in the given format please note we depend on graphviz, please ensure you have graphviz installed
 
+<a name="GetFromResult"></a>
 ## func GetFromResult
 
 ```go
 func GetFromResult(ctx context.Context, obj interface{}) interface{}
 ```
 
-### GetFromResult allows builders to access data built by other builders
+GetFromResult allows builders to access data built by other builders
 
 this function enables optional access to data, your code should not rely on values being present, if you have explicit dependency please add them to your function parameters
 
+<a name="IsValidBuilder"></a>
 ## func IsValidBuilder
 
 ```go
@@ -95,17 +101,18 @@ func IsValidBuilder(builder interface{}) error
 
 IsValidBuilder checks if the given function is valid or not
 
+<a name="MaxPlanParallelism"></a>
 ## func MaxPlanParallelism
 
 ```go
 func MaxPlanParallelism(pl Plan) (uint, error)
 ```
 
-### MaxPlanParallelism return the maximum number of buildes that can be exsecuted parallely
-for a given plan
+MaxPlanParallelism return the maximum number of buildes that can be exsecuted parallely for a given plan
 
 this number does not take into account if the builder are cpu intensive or netwrok intensive it may not be benificial to run builders at max parallelism if they are cpu intensive
 
+<a name="DataBuilder"></a>
 ## type DataBuilder
 
 DataBuilder is the interface for DataBuilder
@@ -122,6 +129,8 @@ type DataBuilder interface {
 
 <details><summary>Example</summary>
 <p>
+
+
 
 ```go
 package main
@@ -267,6 +276,7 @@ welcome to singapore
 </p>
 </details>
 
+<a name="New"></a>
 ### func New
 
 ```go
@@ -275,6 +285,7 @@ func New() DataBuilder
 
 New Creates a new DataBuilder
 
+<a name="Plan"></a>
 ## type Plan
 
 Plan is the interface that wraps execution of Plans created by DataBuilder.Compile method.
@@ -293,23 +304,33 @@ type Plan interface {
 <details><summary>Example</summary>
 <p>
 
+
+
 ```go
-{
-	b := New()
-	err := b.AddBuilders(DBTestFunc, DBTestFunc4)
-	fmt.Println(err == nil)
-	ep, err := b.Compile(TestStruct1{})
-	fmt.Println(err == nil)
+b := New()
+err := b.AddBuilders(DBTestFunc, DBTestFunc4)
+fmt.Println(err == nil)
+ep, err := b.Compile(TestStruct1{})
+fmt.Println(err == nil)
 
-	_, err = ep.Run(context.Background(), TestStruct1{})
-	fmt.Println(err == nil)
+_, err = ep.Run(context.Background(), TestStruct1{})
+fmt.Println(err == nil)
 
-	err = ep.Replace(context.Background(), DBTestFunc, DBTestFunc5)
-	fmt.Println(err == nil)
-	_, err = ep.Run(context.Background(), TestStruct1{})
-	fmt.Println(err == nil)
+err = ep.Replace(context.Background(), DBTestFunc, DBTestFunc5)
+fmt.Println(err == nil)
+_, err = ep.Run(context.Background(), TestStruct1{})
+fmt.Println(err == nil)
 
-}
+// Output:
+// true
+// true
+// CALLED DBTestFunc
+// CALLED DBTestFunc4
+// true
+// true
+// CALLED DBTestFunc5
+// CALLED DBTestFunc4
+// true
 ```
 
 #### Output
@@ -329,6 +350,7 @@ true
 </p>
 </details>
 
+<a name="Result"></a>
 ## type Result
 
 Result is the result of the Plan.Run method
@@ -337,16 +359,18 @@ Result is the result of the Plan.Run method
 type Result map[string]interface{}
 ```
 
+<a name="GetResultFromCtx"></a>
 ### func GetResultFromCtx
 
 ```go
 func GetResultFromCtx(ctx context.Context) Result
 ```
 
-#### GetResultFromCtx gives access to result object at this point in execution
+GetResultFromCtx gives access to result object at this point in execution
 
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj may or may not persist
 
+<a name="Result.Get"></a>
 ### func \(Result\) Get
 
 ```go
@@ -354,7 +378,5 @@ func (r Result) Get(obj interface{}) interface{}
 ```
 
 Result.Get returns the value of the struct from the result if the struct is not found in the result, nil is returned
-
-
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
