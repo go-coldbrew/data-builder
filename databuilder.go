@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"runtime"
 
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 /*
@@ -13,7 +12,7 @@ import (
  */
 
 type builder struct {
-	Builder interface{}
+	Builder any
 	In      []string
 	Out     string
 	Name    string
@@ -21,16 +20,16 @@ type builder struct {
 
 type db struct {
 	builders map[string]*builder
-	outSet   sets.String
+	outSet   stringSet
 }
 
-func (d *db) AddBuilders(builders ...interface{}) error {
+func (d *db) AddBuilders(builders ...any) error {
 	// initialize
 	if d.builders == nil {
 		d.builders = make(map[string]*builder)
 	}
 	if d.outSet == nil {
-		d.outSet = sets.NewString()
+		d.outSet = newStringSet()
 	}
 
 	// go through all builders and add them
@@ -46,7 +45,7 @@ func (d *db) AddBuilders(builders ...interface{}) error {
 	return nil
 }
 
-func (d *db) add(bldr interface{}) error {
+func (d *db) add(bldr any) error {
 	b, err := getBuilder(bldr)
 	if err != nil {
 		return err
@@ -67,7 +66,7 @@ func (d *db) add(bldr interface{}) error {
 	return nil
 }
 
-func (d *db) Compile(init ...interface{}) (Plan, error) {
+func (d *db) Compile(init ...any) (Plan, error) {
 	initialialData := make([]string, 0, len(init))
 	for _, inter := range init {
 		if inter == nil {
@@ -88,7 +87,7 @@ func (d *db) Compile(init ...interface{}) (Plan, error) {
 }
 
 // IsValidBuilder checks if the given function is valid or not
-func IsValidBuilder(builder interface{}) error {
+func IsValidBuilder(builder any) error {
 	t := reflect.TypeOf(builder)
 	if t.Kind() != reflect.Func {
 		// Input can only be a function
@@ -135,7 +134,7 @@ func IsValidBuilder(builder interface{}) error {
 	return nil
 }
 
-func getBuilder(bldr interface{}) (*builder, error) {
+func getBuilder(bldr any) (*builder, error) {
 	if err := IsValidBuilder(bldr); err != nil {
 		return nil, err
 	}
@@ -156,7 +155,7 @@ func getBuilder(bldr interface{}) (*builder, error) {
 	return b, nil
 }
 
-func getFuncName(bldr interface{}) string {
+func getFuncName(bldr any) string {
 	return runtime.FuncForPC(reflect.ValueOf(bldr).Pointer()).Name()
 }
 

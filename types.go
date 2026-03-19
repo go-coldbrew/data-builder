@@ -35,21 +35,21 @@ var (
 // DataBuilder is the interface for DataBuilder
 type DataBuilder interface {
 	// AddBuilders adds the builders to the DataBuilder. The builders are added to the DataBuilder
-	AddBuilders(fn ...interface{}) error
+	AddBuilders(fn ...any) error
 	// Compile compiles the builders and returns a plan that can be used to run the builders
 	// The initial data is used to resolve the dependencies of the builders. The initial data should be a struct that contains the fields that are used as input for the builders when this Plan is executed.
-	Compile(initialData ...interface{}) (Plan, error)
+	Compile(initialData ...any) (Plan, error)
 }
 
 // Plan is the interface that wraps execution of Plans created by DataBuilder.Compile method.
 type Plan interface {
 	// Replace replaces the builder function used in compile with a different function. The builder function should be the same as the one used in AddBuilders
-	Replace(ctx context.Context, from, to interface{}) error
+	Replace(ctx context.Context, from, to any) error
 	// Run runs the builders in the plan. The initial data is used to resolve the dependencies of the builders. The initial data should be a struct that contains the fields that are used as input for the builders when this Plan is executed.
-	Run(ctx context.Context, initValues ...interface{}) (Result, error)
+	Run(ctx context.Context, initValues ...any) (Result, error)
 	// RunParallel runs the builders in the plan in parallel. The initial data is used to resolve the dependencies of the builders. The initial data should be a struct that contains the fields that are used as input for the builders when this Plan is executed.
-	RunParallel(ctx context.Context, count uint, initValues ...interface{}) (Result, error)
+	RunParallel(ctx context.Context, count uint, initValues ...any) (Result, error)
 }
 
 // Result is the result of the Plan.Run method
-type Result map[string]interface{}
+type Result map[string]any

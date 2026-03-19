@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-coldbrew/tracing"
 	graphviz "github.com/goccy/go-graphviz"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // ErrWTF is the error returned in case we find dependency resolution related errors, please report these
@@ -17,10 +16,10 @@ var ErrWTF = errors.New("What a Terrible Failure!, This is likely a bug in depen
 
 type plan struct {
 	order    [][]*builder
-	initData sets.String // the initial data required for this plan
+	initData stringSet // the initial data required for this plan
 }
 
-func (p *plan) Replace(ctx context.Context, from interface{}, to interface{}) error {
+func (p *plan) Replace(ctx context.Context, from any, to any) error {
 	f, err := getBuilder(from)
 	if err != nil {
 		return err
@@ -40,8 +39,8 @@ func (p *plan) Replace(ctx context.Context, from interface{}, to interface{}) er
 		return errors.New("both builders should have the same output")
 	}
 
-	input := sets.NewString(f.In...)
-	if !input.IsSuperset(sets.NewString(t.In...)) {
+	input := newStringSet(f.In...)
+	if !input.IsSuperset(newStringSet(t.In...)) {
 		return errors.New("replace can NOT introduce dependencies, please compile a new plan")
 	}
 
@@ -58,18 +57,18 @@ func (p *plan) Replace(ctx context.Context, from interface{}, to interface{}) er
 	return errors.New("builder not found")
 }
 
-func (p *plan) Run(ctx context.Context, initData ...interface{}) (Result, error) {
+func (p *plan) Run(ctx context.Context, initData ...any) (Result, error) {
 	span, ctx := tracing.NewInternalSpan(ctx, "DBRun")
 	defer span.End()
 	r, err := p.RunParallel(ctx, 1, initData...)
 	return r, span.SetError(err)
 }
 
-func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...interface{}) (Result, error) {
+func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...any) (Result, error) {
 	span, ctx := tracing.NewInternalSpan(ctx, "DBRunParallel")
 	defer span.End()
-	dataMap := make(map[string]interface{})
-	initialData := sets.NewString()
+	dataMap := make(map[string]any)
+	initialData := newStringSet()
 	for _, inter := range initData {
 		if inter == nil {
 			continue
@@ -96,7 +95,7 @@ type work struct {
 	out     chan<- output
 	wg      *sync.WaitGroup
 	builder *builder
-	dataMap map[string]interface{}
+	dataMap map[string]any
 }
 
 type output struct {
@@ -144,7 +143,7 @@ func processWork(ctx context.Context, w work) {
 	w.out <- o
 }
 
-func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[string]interface{}, wChan chan<- work) error {
+func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[string]any, wChan chan<- work) error {
 	// create a output channel to read results
 	outChan := make(chan output, len(builders)+1)
 	// create a wait group to wait for all results
@@ -192,7 +191,7 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	return nil
 }
 
-func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interface{}) error {
+func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) error {
 	if workers == 0 {
 		workers = 1
 	}
@@ -221,7 +220,7 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]interfa
 
 // Result.Get returns the value of the struct from the result
 // if the struct is not found in the result, nil is returned
-func (r Result) Get(obj interface{}) interface{} {
+func (r Result) Get(obj any) any {
 	if obj == nil || r == nil {
 		return nil
 	}
@@ -237,54 +236,57 @@ func (r Result) Get(obj interface{}) interface{} {
 }
 
 // BuildGraph builds a graphviz graph of the dependency graph of the plan and writes it to the file specified.
-func (p plan) BuildGraph(format, file string) error {
+func (p plan) BuildGraph(ctx context.Context, format, file string) error {
 	const (
 		FNCOLOR     = "red"
 		STRUCTCOLOR = "blue"
 	)
 
-	g := graphviz.New()
-	graph, err := g.Graph(graphviz.Name("Dependency Graph"))
+	g, err := graphviz.New(ctx)
+	if err != nil {
+		return err
+	}
+	graph, err := g.Graph(graphviz.WithName("Dependency Graph"))
 	if err != nil {
 		return err
 	}
 	for i := range p.order {
 		for j := range p.order[i] {
 			b := p.order[i][j]
-			fn, err := graph.CreateNode(b.Name + " [" + strconv.Itoa(i) + "]") // here [] denotes order
+			fn, err := graph.CreateNodeByName(b.Name + " [" + strconv.Itoa(i) + "]") // here [] denotes order
 			if err != nil {
 				return err
 			}
 			fn = fn.SetFontColor(FNCOLOR)
-			out, err := graph.CreateNode(b.Out)
+			out, err := graph.CreateNodeByName(b.Out)
 			if err != nil {
 				return err
 			}
 			out = out.SetFontColor(STRUCTCOLOR)
-			_, err = graph.CreateEdge("Out", fn, out)
+			_, err = graph.CreateEdgeByName("Out", fn, out)
 			if err != nil {
 				return err
 			}
 			for _, in := range b.In {
-				in, err := graph.CreateNode(in)
+				in, err := graph.CreateNodeByName(in)
 				if err != nil {
 					return err
 				}
 				in = in.SetFontColor(STRUCTCOLOR)
-				_, err = graph.CreateEdge("In", in, fn)
+				_, err = graph.CreateEdgeByName("In", in, fn)
 				if err != nil {
 					return err
 				}
 			}
 		}
 	}
-	return g.RenderFilename(graph, graphviz.Format(format), file)
+	return g.RenderFilename(ctx, graph, graphviz.Format(format), file)
 }
 
 func newPlan(order [][]*builder, initData []string) (Plan, error) {
 	return &plan{
 		order:    order,
-		initData: sets.NewString(initData...),
+		initData: newStringSet(initData...),
 	}, nil
 }
 
@@ -292,7 +294,7 @@ func newPlan(order [][]*builder, initData []string) (Plan, error) {
 // please note we depend on graphviz, please ensure you have graphviz installed
 func BuildGraph(executionPlan Plan, format, file string) error {
 	if p, ok := executionPlan.(*plan); ok {
-		return p.BuildGraph(format, file)
+		return p.BuildGraph(context.Background(), format, file)
 	}
 	return errors.New("could not find graph builder")
 }

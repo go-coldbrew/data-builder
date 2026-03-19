@@ -41,7 +41,7 @@ func GetResultFromCtx(ctx context.Context) Result {
 // this function enables optional access to data, your code should not rely on
 // values being present, if you have explicit dependency please add them to your
 // function parameters
-func GetFromResult(ctx context.Context, obj interface{}) interface{} {
+func GetFromResult(ctx context.Context, obj any) any {
 	r := GetResultFromCtx(ctx)
 	if r == nil {
 		return nil
