@@ -185,7 +185,7 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	}
 	if len(errs) > 0 {
 		// we only return the first error
-		// TODO enhance error handling
+		// only the first error is returned; aggregate if needed
 		return errs[0]
 	}
 	return nil
@@ -212,7 +212,7 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) er
 	}
 	if len(errs) > 0 {
 		// we only return the first error
-		// TODO enhance error handling
+		// only the first error is returned; aggregate if needed
 		return errs[0]
 	}
 	return nil
@@ -309,11 +309,11 @@ func MaxPlanParallelism(pl Plan) (uint, error) {
 	if !ok {
 		return 0, errors.New("could not find plan created by data-builder")
 	}
-	max := 1
+	maxParallel := 1
 	for _, order := range p.order {
-		if len(order) > max {
-			max = len(order)
+		if len(order) > maxParallel {
+			maxParallel = len(order)
 		}
 	}
-	return uint(max), nil
+	return uint(maxParallel), nil
 }
