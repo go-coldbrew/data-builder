@@ -53,6 +53,20 @@ func (s stringSet) List() []string {
 	return res
 }
 
+// String returns a human-readable representation of the set, e.g. "[a b c]".
+func (s stringSet) String() string {
+	items := s.List()
+	result := "["
+	for i, item := range items {
+		if i > 0 {
+			result += " "
+		}
+		result += item
+	}
+	result += "]"
+	return result
+}
+
 // Difference returns a new set with items in s but not in other.
 func (s stringSet) Difference(other stringSet) stringSet {
 	result := newStringSet()
