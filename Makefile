@@ -12,7 +12,7 @@ install:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint \
 		github.com/princjef/gomarkdoc/cmd/gomarkdoc
 
-lint:
+lint: install
 	golangci-lint run
 
 bench:

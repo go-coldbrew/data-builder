@@ -12,7 +12,7 @@ import (
 )
 
 // ErrWTF is the error returned in case we find dependency resolution related errors, please report this
-var ErrWTF = errors.New("what a terrible failure!, this is likely a bug in dependency resolution, please report this")
+var ErrWTF = errors.New("what a terrible failure: this is likely a bug in dependency resolution, please report this")
 
 type plan struct {
 	order    [][]*builder
