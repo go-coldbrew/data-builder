@@ -7,7 +7,7 @@ import (
 
 var (
 	// ErrInvalidBuilder is returned when the builder is not valid
-	ErrInvalidBuilder = errors.New("The provided builder is invalid")
+	ErrInvalidBuilder = errors.New("the provided builder is invalid")
 	// ErrInvalidBuilderKind is returned when the builder is not a function
 	ErrInvalidBuilderKind = errors.New("invalid builder, should only be a function")
 	// ErrInvalidBuilderNumInput is returned when the builder does not have 1 input

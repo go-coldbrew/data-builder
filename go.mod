@@ -3,7 +3,7 @@ module github.com/go-coldbrew/data-builder
 go 1.25.0
 
 require (
-	github.com/go-coldbrew/tracing v0.0.6
+	github.com/go-coldbrew/tracing v0.0.7
 	github.com/goccy/go-graphviz v0.2.10
 	github.com/google/go-cmp v0.7.0
 	github.com/princjef/gomarkdoc v0.4.0
