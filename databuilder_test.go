@@ -69,6 +69,11 @@ func TestTypedNilBuilderRejected(t *testing.T) {
 	err := d.AddBuilders(nilFunc)
 	assert.Error(t, err, "typed-nil func should be rejected")
 	assert.ErrorIs(t, err, ErrInvalidBuilder)
+
+	// IsValidBuilder should also reject typed-nil builders directly
+	err = IsValidBuilder(nilFunc)
+	assert.Error(t, err, "IsValidBuilder should reject typed-nil func")
+	assert.ErrorIs(t, err, ErrInvalidBuilder)
 }
 
 func TestContextCancellation(t *testing.T) {

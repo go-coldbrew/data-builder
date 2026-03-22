@@ -96,6 +96,9 @@ func IsValidBuilder(builder any) error {
 		// Input can only be a function
 		return ErrInvalidBuilderKind
 	}
+	if reflect.ValueOf(builder).IsNil() {
+		return ErrInvalidBuilder
+	}
 	if t.NumOut() != 2 {
 		// should return a struct and an error
 		return ErrInvalidBuilderNumOutput
