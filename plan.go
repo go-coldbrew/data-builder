@@ -183,10 +183,21 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 		name := getStructName(outputs[0].Type())
 		dataMap[name] = outputs[0].Interface()
 	}
-	if len(errs) > 0 {
+	return joinErrors(errs)
+}
+
+// joinErrors returns nil for no errors, the error itself for a single error,
+// or a joined error for multiple errors. This avoids wrapping single errors
+// which would break sentinel checks like err == context.Canceled.
+func joinErrors(errs []error) error {
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
 		return errors.Join(errs...)
 	}
-	return nil
 }
 
 func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) error {
@@ -203,18 +214,15 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) er
 
 	errs := make([]error, 0)
 	for i := range p.order {
-		if ctx.Err() != nil {
-			return errors.Join(append(errs, ctx.Err())...)
+		if err := ctx.Err(); err != nil {
+			return joinErrors(append(errs, err))
 		}
 		err := doWorkAndGetResult(ctx, p.order[i], dataMap, wChan)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-	return nil
+	return joinErrors(errs)
 }
 
 // Result.Get returns the value of the struct from the result
