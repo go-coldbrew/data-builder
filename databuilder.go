@@ -12,10 +12,11 @@ import (
  */
 
 type builder struct {
-	Builder any
-	In      []string
-	Out     string
-	Name    string
+	Builder  any
+	fnValue  reflect.Value // cached reflect.ValueOf(Builder) to avoid repeated reflection
+	In       []string
+	Out      string
+	Name     string
 }
 
 type db struct {
@@ -146,6 +147,7 @@ func getBuilder(bldr any) (*builder, error) {
 	b := &builder{
 		Out:     out,
 		Builder: bldr,
+		fnValue: reflect.ValueOf(bldr),
 		Name:    name,
 	}
 	// first in context.Context so we start from second

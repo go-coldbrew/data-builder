@@ -122,7 +122,7 @@ func processWork(ctx context.Context, w work) {
 			w.out <- o
 		}
 	}()
-	fn := reflect.ValueOf(w.builder.Builder)
+	fn := w.builder.fnValue
 	// allow builders to access already built data
 	ctx = AddResultToCtx(ctx, w.dataMap)
 	args := make([]reflect.Value, 1)
@@ -184,9 +184,7 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 		dataMap[name] = outputs[0].Interface()
 	}
 	if len(errs) > 0 {
-		// we only return the first error
-		// only the first error is returned; aggregate if needed
-		return errs[0]
+		return errors.Join(errs...)
 	}
 	return nil
 }
@@ -205,15 +203,16 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) er
 
 	errs := make([]error, 0)
 	for i := range p.order {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		err := doWorkAndGetResult(ctx, p.order[i], dataMap, wChan)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if len(errs) > 0 {
-		// we only return the first error
-		// only the first error is returned; aggregate if needed
-		return errs[0]
+		return errors.Join(errs...)
 	}
 	return nil
 }
