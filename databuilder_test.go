@@ -1,6 +1,7 @@
 package databuilder
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,4 +61,44 @@ func TestCompileCyclic(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = d.Compile()
 	assert.Error(t, err, "cyclic dependency should return an error")
+}
+
+func TestTypedNilBuilderRejected(t *testing.T) {
+	var nilFunc func(context.Context) (TestStruct1, error)
+	d := testNew(t)
+	err := d.AddBuilders(nilFunc)
+	assert.Error(t, err, "typed-nil func should be rejected")
+	assert.ErrorIs(t, err, ErrInvalidBuilder)
+}
+
+func TestContextCancellation(t *testing.T) {
+	d := testNew(t)
+	err := d.AddBuilders(DBTestFunc, DBTestFunc4)
+	assert.NoError(t, err)
+	plan, err := d.Compile(TestStruct1{})
+	assert.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	_, err = plan.Run(ctx, TestStruct1{Value: "test"})
+	assert.Error(t, err, "cancelled context should return an error")
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestJoinErrorsSingle(t *testing.T) {
+	// Single error should be returned unwrapped
+	sentinel := ErrWTF
+	err := joinErrors([]error{sentinel})
+	assert.Equal(t, sentinel, err, "single error should be returned as-is, not wrapped")
+
+	// No errors
+	err = joinErrors(nil)
+	assert.NoError(t, err)
+
+	// Multiple errors
+	err = joinErrors([]error{ErrWTF, ErrInvalidBuilder})
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrWTF)
+	assert.ErrorIs(t, err, ErrInvalidBuilder)
 }
