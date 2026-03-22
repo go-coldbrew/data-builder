@@ -204,7 +204,7 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) er
 	errs := make([]error, 0)
 	for i := range p.order {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return errors.Join(append(errs, ctx.Err())...)
 		}
 		err := doWorkAndGetResult(ctx, p.order[i], dataMap, wChan)
 		if err != nil {
