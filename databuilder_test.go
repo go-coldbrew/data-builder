@@ -86,7 +86,7 @@ func TestContextCancellation(t *testing.T) {
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
-func TestJoinErrorsSingle(t *testing.T) {
+func TestJoinErrors(t *testing.T) {
 	// Single error should be returned unwrapped
 	sentinel := ErrWTF
 	err := joinErrors([]error{sentinel})

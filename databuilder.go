@@ -88,6 +88,9 @@ func (d *db) Compile(init ...any) (Plan, error) {
 
 // IsValidBuilder checks if the given function is valid or not
 func IsValidBuilder(builder any) error {
+	if builder == nil {
+		return ErrInvalidBuilder
+	}
 	t := reflect.TypeOf(builder)
 	if t.Kind() != reflect.Func {
 		// Input can only be a function
