@@ -12,7 +12,7 @@ import (
  */
 
 type builder struct {
-	Builder any
+	fnValue reflect.Value // cached reflect.ValueOf(builder func) to avoid repeated reflection
 	In      []string
 	Out     string
 	Name    string
@@ -88,10 +88,16 @@ func (d *db) Compile(init ...any) (Plan, error) {
 
 // IsValidBuilder checks if the given function is valid or not
 func IsValidBuilder(builder any) error {
+	if builder == nil {
+		return ErrInvalidBuilder
+	}
 	t := reflect.TypeOf(builder)
 	if t.Kind() != reflect.Func {
 		// Input can only be a function
 		return ErrInvalidBuilderKind
+	}
+	if reflect.ValueOf(builder).IsNil() {
+		return ErrInvalidBuilder
 	}
 	if t.NumOut() != 2 {
 		// should return a struct and an error
@@ -139,13 +145,18 @@ func getBuilder(bldr any) (*builder, error) {
 		return nil, err
 	}
 
-	t := reflect.TypeOf(bldr)
+	fnValue := reflect.ValueOf(bldr)
+	if fnValue.IsNil() {
+		return nil, ErrInvalidBuilder
+	}
+
+	t := fnValue.Type()
 	out := getStructName(t.Out(0))
-	name := getFuncName(bldr)
+	name := runtime.FuncForPC(fnValue.Pointer()).Name()
 
 	b := &builder{
 		Out:     out,
-		Builder: bldr,
+		fnValue: fnValue,
 		Name:    name,
 	}
 	// first in context.Context so we start from second
@@ -153,10 +164,6 @@ func getBuilder(bldr any) (*builder, error) {
 		b.In = append(b.In, getStructName(t.In(i)))
 	}
 	return b, nil
-}
-
-func getFuncName(bldr any) string {
-	return runtime.FuncForPC(reflect.ValueOf(bldr).Pointer()).Name()
 }
 
 func getStructName(t reflect.Type) string {

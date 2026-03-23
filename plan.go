@@ -122,7 +122,7 @@ func processWork(ctx context.Context, w work) {
 			w.out <- o
 		}
 	}()
-	fn := reflect.ValueOf(w.builder.Builder)
+	fn := w.builder.fnValue
 	// allow builders to access already built data
 	ctx = AddResultToCtx(ctx, w.dataMap)
 	args := make([]reflect.Value, 1)
@@ -183,12 +183,21 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 		name := getStructName(outputs[0].Type())
 		dataMap[name] = outputs[0].Interface()
 	}
-	if len(errs) > 0 {
-		// we only return the first error
-		// only the first error is returned; aggregate if needed
+	return joinErrors(errs)
+}
+
+// joinErrors returns nil for no errors, the error itself for a single error,
+// or a joined error for multiple errors. This avoids wrapping single errors
+// which would break sentinel checks like err == context.Canceled.
+func joinErrors(errs []error) error {
+	switch len(errs) {
+	case 0:
+		return nil
+	case 1:
 		return errs[0]
+	default:
+		return errors.Join(errs...)
 	}
-	return nil
 }
 
 func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) error {
@@ -205,17 +214,18 @@ func (p *plan) run(ctx context.Context, workers uint, dataMap map[string]any) er
 
 	errs := make([]error, 0)
 	for i := range p.order {
+		if err := ctx.Err(); err != nil {
+			if len(errs) == 0 {
+				return err
+			}
+			return joinErrors(append(errs, err))
+		}
 		err := doWorkAndGetResult(ctx, p.order[i], dataMap, wChan)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0 {
-		// we only return the first error
-		// only the first error is returned; aggregate if needed
-		return errs[0]
-	}
-	return nil
+	return joinErrors(errs)
 }
 
 // Result.Get returns the value of the struct from the result
