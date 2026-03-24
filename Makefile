@@ -1,4 +1,4 @@
-.PHONY: build test doc lint bench install test-v
+.PHONY: build test doc lint bench test-v
 build:
 	go build ./...
 
@@ -8,15 +8,11 @@ test:
 test-v:
 	go test -v -race ./...
 
-install:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint \
-		github.com/princjef/gomarkdoc/cmd/gomarkdoc
-
-lint: install
-	golangci-lint run
+lint:
+	go tool golangci-lint run
 
 bench:
 	go test -run=^$ -bench=. -benchmem ./...
 
-doc: install
-	gomarkdoc --output '{{.Dir}}/README.md' ./...
+doc:
+	go tool gomarkdoc --output '{{.Dir}}/README.md' ./...
