@@ -11,6 +11,9 @@ import (
 	graphviz "github.com/goccy/go-graphviz"
 )
 
+// Compile-time version compatibility check.
+var _ = tracing.SupportPackageIsVersion1
+
 // ErrWTF is the error returned in case we find dependency resolution related errors, please report this
 var ErrWTF = errors.New("what a terrible failure: this is likely a bug in dependency resolution, please report this")
 

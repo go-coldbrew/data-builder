@@ -11,6 +11,10 @@ import (
  * Before going throught this code please read - https://go.dev/blog/laws-of-reflection
  */
 
+// SupportPackageIsVersion1 is a compile-time assertion constant.
+// Downstream packages reference this to enforce version compatibility.
+const SupportPackageIsVersion1 = true
+
 type builder struct {
 	fnValue reflect.Value // cached reflect.ValueOf(builder func) to avoid repeated reflection
 	In      []string
