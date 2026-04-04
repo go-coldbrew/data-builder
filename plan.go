@@ -3,6 +3,7 @@ package databuilder
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"sync"
@@ -141,7 +142,11 @@ func processWork(ctx context.Context, w work) {
 	}
 	o.outputs = fn.Call(args)
 	if len(o.outputs) > 1 && !o.outputs[1].IsNil() {
-		span.SetError(o.outputs[1].Interface().(error)) // nolint: errcheck
+		if errVal, ok := o.outputs[1].Interface().(error); ok {
+			span.SetError(errVal) //nolint:errcheck
+		} else {
+			span.SetError(fmt.Errorf("builder %s: second return value is not an error: %v", w.builder.Name, o.outputs[1].Interface())) //nolint:errcheck
+		}
 	}
 	w.out <- o
 }
@@ -179,7 +184,11 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 		// 0-> data, 1-> error
 		if !outputs[1].IsNil() {
 			// error occured, add it to the list of errors and continue processing
-			errs = append(errs, outputs[1].Interface().(error))
+			if errVal, ok := outputs[1].Interface().(error); ok {
+			errs = append(errs, errVal)
+		} else {
+			errs = append(errs, fmt.Errorf("builder %s: second return value is not an error: %v", o.builder.Name, outputs[1].Interface()))
+		}
 			continue
 		}
 		// add result
