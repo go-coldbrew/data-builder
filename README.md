@@ -89,7 +89,7 @@ AddResultToCtx adds the given result object to context
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj will NOT persist
 
 <a name="BuildGraph"></a>
-## func [BuildGraph](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L317>)
+## func [BuildGraph](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L319>)
 
 ```go
 func BuildGraph(executionPlan Plan, format, file string) error
@@ -118,7 +118,7 @@ func IsValidBuilder(builder any) error
 IsValidBuilder checks if the given function is valid or not
 
 <a name="MaxPlanParallelism"></a>
-## func [MaxPlanParallelism](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L329>)
+## func [MaxPlanParallelism](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L331>)
 
 ```go
 func MaxPlanParallelism(pl Plan) (uint, error)
@@ -387,7 +387,7 @@ GetResultFromCtx gives access to result object at this point in execution
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj may or may not persist
 
 <a name="Result.Get"></a>
-### func \(Result\) [Get](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L245>)
+### func \(Result\) [Get](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L247>)
 
 ```go
 func (r Result) Get(obj any) any
