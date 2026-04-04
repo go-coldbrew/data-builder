@@ -177,14 +177,14 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	errs := make([]error, 0)
 	for o := range outChan {
 		if o.err != nil {
-			// error occured, return it back and stop processing
+			// error occurred, return it back and stop processing
 			return o.err
 		}
 		outputs := o.outputs
 		// we should only ever have two outputs
 		// 0-> data, 1-> error
 		if !outputs[1].IsNil() {
-			// error occured, add it to the list of errors and continue processing
+			// error occurred, add it to the list of errors and continue processing
 			secondReturn := outputs[1].Interface()
 			if errVal, ok := secondReturn.(error); ok {
 				errs = append(errs, errVal)

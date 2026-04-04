@@ -105,8 +105,7 @@ func TestPlanRun_ErrorFlowWithCommaOk(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = executionPlan.Run(context.Background(), TestStruct1{Value: "test"})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "encountered an error")
+	assert.ErrorContains(t, err, "encountered an error")
 	goleak.VerifyNone(t)
 }
 
