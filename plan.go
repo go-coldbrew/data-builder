@@ -3,6 +3,7 @@ package databuilder
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"sync"
@@ -141,7 +142,12 @@ func processWork(ctx context.Context, w work) {
 	}
 	o.outputs = fn.Call(args)
 	if len(o.outputs) > 1 && !o.outputs[1].IsNil() {
-		span.SetError(o.outputs[1].Interface().(error)) // nolint: errcheck
+		secondReturn := o.outputs[1].Interface()
+		if errVal, ok := secondReturn.(error); ok {
+			span.SetError(errVal) //nolint:errcheck
+		} else {
+			span.SetError(fmt.Errorf("builder %s: second return value is not an error (type %T)", w.builder.Name, secondReturn)) //nolint:errcheck
+		}
 	}
 	w.out <- o
 }
@@ -171,15 +177,20 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 	errs := make([]error, 0)
 	for o := range outChan {
 		if o.err != nil {
-			// error occured, return it back and stop processing
+			// error occurred, return it back and stop processing
 			return o.err
 		}
 		outputs := o.outputs
 		// we should only ever have two outputs
 		// 0-> data, 1-> error
 		if !outputs[1].IsNil() {
-			// error occured, add it to the list of errors and continue processing
-			errs = append(errs, outputs[1].Interface().(error))
+			// error occurred, add it to the list of errors and continue processing
+			secondReturn := outputs[1].Interface()
+			if errVal, ok := secondReturn.(error); ok {
+				errs = append(errs, errVal)
+			} else {
+				errs = append(errs, fmt.Errorf("builder %s: second return value is not an error (type %T)", o.builder.Name, secondReturn))
+			}
 			continue
 		}
 		// add result

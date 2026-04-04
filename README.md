@@ -15,6 +15,7 @@ import "github.com/go-coldbrew/data-builder"
 
 ## Index
 
+- [Constants](<#constants>)
 - [Variables](<#variables>)
 - [func AddResultToCtx\(ctx context.Context, r Result\) context.Context](<#AddResultToCtx>)
 - [func BuildGraph\(executionPlan Plan, format, file string\) error](<#BuildGraph>)
@@ -28,6 +29,14 @@ import "github.com/go-coldbrew/data-builder"
   - [func GetResultFromCtx\(ctx context.Context\) Result](<#GetResultFromCtx>)
   - [func \(r Result\) Get\(obj any\) any](<#Result.Get>)
 
+
+## Constants
+
+<a name="SupportPackageIsVersion1"></a>SupportPackageIsVersion1 is a compile\-time assertion constant. Downstream packages reference this to enforce version compatibility.
+
+```go
+const SupportPackageIsVersion1 = true
+```
 
 ## Variables
 
@@ -80,7 +89,7 @@ AddResultToCtx adds the given result object to context
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj will NOT persist
 
 <a name="BuildGraph"></a>
-## func [BuildGraph](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L305>)
+## func [BuildGraph](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L319>)
 
 ```go
 func BuildGraph(executionPlan Plan, format, file string) error
@@ -100,7 +109,7 @@ GetFromResult allows builders to access data built by other builders
 this function enables optional access to data, your code should not rely on values being present, if you have explicit dependency please add them to your function parameters
 
 <a name="IsValidBuilder"></a>
-## func [IsValidBuilder](<https://github.com/go-coldbrew/data-builder/blob/main/databuilder.go#L90>)
+## func [IsValidBuilder](<https://github.com/go-coldbrew/data-builder/blob/main/databuilder.go#L94>)
 
 ```go
 func IsValidBuilder(builder any) error
@@ -109,7 +118,7 @@ func IsValidBuilder(builder any) error
 IsValidBuilder checks if the given function is valid or not
 
 <a name="MaxPlanParallelism"></a>
-## func [MaxPlanParallelism](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L317>)
+## func [MaxPlanParallelism](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L331>)
 
 ```go
 func MaxPlanParallelism(pl Plan) (uint, error)
@@ -284,7 +293,7 @@ welcome to singapore
 </details>
 
 <a name="New"></a>
-### func [New](<https://github.com/go-coldbrew/data-builder/blob/main/databuilder.go#L174>)
+### func [New](<https://github.com/go-coldbrew/data-builder/blob/main/databuilder.go#L178>)
 
 ```go
 func New() DataBuilder
@@ -378,7 +387,7 @@ GetResultFromCtx gives access to result object at this point in execution
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj may or may not persist
 
 <a name="Result.Get"></a>
-### func \(Result\) [Get](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L233>)
+### func \(Result\) [Get](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L247>)
 
 ```go
 func (r Result) Get(obj any) any

@@ -94,6 +94,21 @@ func TestPlanRunPartialSuccess(t *testing.T) {
 	goleak.VerifyNone(t)
 }
 
+func TestPlanRun_ErrorFlowWithCommaOk(t *testing.T) {
+	// Verify that the comma-ok type assertion guards in processWork and
+	// doWorkAndGetResult correctly propagate errors from builders.
+	d := testNew(t)
+	err := d.AddBuilders(DBTestFuncErr)
+	assert.NoError(t, err)
+	executionPlan, err := d.Compile(TestStruct1{})
+	assert.NotNil(t, executionPlan)
+	assert.NoError(t, err)
+
+	_, err = executionPlan.Run(context.Background(), TestStruct1{Value: "test"})
+	assert.ErrorContains(t, err, "encountered an error")
+	goleak.VerifyNone(t)
+}
+
 func ExamplePlan() {
 	b := New()
 	err := b.AddBuilders(DBTestFunc, DBTestFunc4)
