@@ -3,8 +3,6 @@ package databuilder
 import (
 	"context"
 	"reflect"
-	"runtime"
-
 )
 
 /*
@@ -80,7 +78,7 @@ func (d *db) Compile(init ...any) (Plan, error) {
 		if t.Kind() != reflect.Struct {
 			return nil, ErrInvalidBuilderInput
 		}
-		initialialData = append(initialialData, getStructName(t))
+		initialialData = append(initialialData, cachedStructName(t))
 	}
 
 	order, err := resolveDependencies(d.builders, initialialData...)
@@ -133,7 +131,7 @@ func IsValidBuilder(builder any) error {
 				// checks for vardic functions as well
 				return ErrInvalidBuilderInput
 			}
-			if getStructName(t.In(i)) == getStructName(t.Out(0)) {
+			if cachedStructName(t.In(i)) == cachedStructName(t.Out(0)) {
 				return ErrSameInputAsOutput
 			}
 		}
@@ -155,8 +153,8 @@ func getBuilder(bldr any) (*builder, error) {
 	}
 
 	t := fnValue.Type()
-	out := getStructName(t.Out(0))
-	name := runtime.FuncForPC(fnValue.Pointer()).Name()
+	out := cachedStructName(t.Out(0))
+	name := resolveFuncName(fnValue.Pointer())
 
 	b := &builder{
 		Out:     out,
@@ -165,13 +163,9 @@ func getBuilder(bldr any) (*builder, error) {
 	}
 	// first in context.Context so we start from second
 	for i := 1; i < t.NumIn(); i++ {
-		b.In = append(b.In, getStructName(t.In(i)))
+		b.In = append(b.In, cachedStructName(t.In(i)))
 	}
 	return b, nil
-}
-
-func getStructName(t reflect.Type) string {
-	return t.PkgPath() + "." + t.Name()
 }
 
 // New Creates a new DataBuilder
