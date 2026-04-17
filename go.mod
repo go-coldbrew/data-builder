@@ -1,6 +1,6 @@
 module github.com/go-coldbrew/data-builder
 
-go 1.25.8
+go 1.25.9
 
 require (
 	github.com/go-coldbrew/tracing v0.1.0
