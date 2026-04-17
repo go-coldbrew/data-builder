@@ -28,7 +28,7 @@ The benchmark suite lives in `benchmarks_test.go`. `make bench` runs it with
 
 ## Environment
 
-- `go version go1.25.8 linux/amd64`
+- `go version go1.25.9 linux/amd64`
 - CPU: INTEL(R) XEON(R) PLATINUM 8581C @ 2.10GHz (16 logical cores)
 - Kernel: Linux 4.4.0
 - `benchstat` with `-count=6`

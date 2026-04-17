@@ -69,7 +69,7 @@ func (d *db) add(bldr any) error {
 }
 
 func (d *db) Compile(init ...any) (Plan, error) {
-	initialialData := make([]string, 0, len(init))
+	initialData := make([]string, 0, len(init))
 	for _, inter := range init {
 		if inter == nil {
 			continue
@@ -78,14 +78,14 @@ func (d *db) Compile(init ...any) (Plan, error) {
 		if t.Kind() != reflect.Struct {
 			return nil, ErrInvalidBuilderInput
 		}
-		initialialData = append(initialialData, cachedStructName(t))
+		initialData = append(initialData, cachedStructName(t))
 	}
 
-	order, err := resolveDependencies(d.builders, initialialData...)
+	order, err := resolveDependencies(d.builders, initialData...)
 	if err != nil {
 		return nil, err
 	}
-	return newPlan(order, initialialData)
+	return newPlan(order, initialData)
 }
 
 // IsValidBuilder checks if the given function is valid or not
