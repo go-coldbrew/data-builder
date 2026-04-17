@@ -120,6 +120,13 @@ func BenchmarkResolveFuncName_ColdMix(b *testing.B) {
 // --- registration ---
 
 func BenchmarkAddBuilders(b *testing.B) {
+	// Pin cache state to "warm" so this benchmark measures steady-state
+	// registration and doesn't drift based on prior benchmark ordering.
+	resetCachesForTest()
+	warm := New()
+	if err := warm.AddBuilders(benchFuncA, benchFuncB, benchFuncC, benchFuncD); err != nil {
+		b.Fatal(err)
+	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

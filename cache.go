@@ -31,8 +31,3 @@ func resolveFuncName(pc uintptr) string {
 	actual, _ := funcNameCache.LoadOrStore(pc, name)
 	return actual.(string)
 }
-
-func resetCachesForTest() {
-	structNameCache = sync.Map{}
-	funcNameCache = sync.Map{}
-}
