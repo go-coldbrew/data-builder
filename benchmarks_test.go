@@ -53,7 +53,7 @@ func BenchmarkGetStructName_Uncached(b *testing.B) {
 
 func BenchmarkCachedStructName_Hit(b *testing.B) {
 	t := reflect.TypeOf(benchStructA{})
-	_ = cachedStructName(t) // warm
+	_ = cachedStructName(t)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -70,7 +70,7 @@ func BenchmarkCachedStructName_ColdMix(b *testing.B) {
 		reflect.TypeOf(benchStructD{}),
 	}
 	for _, t := range types {
-		_ = cachedStructName(t) // warm once - realistic steady state
+		_ = cachedStructName(t)
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -92,7 +92,7 @@ func BenchmarkFuncForPC_Uncached(b *testing.B) {
 
 func BenchmarkResolveFuncName_Hit(b *testing.B) {
 	pc := reflect.ValueOf(benchFuncA).Pointer()
-	_ = resolveFuncName(pc) // warm
+	_ = resolveFuncName(pc)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -108,7 +108,7 @@ func BenchmarkResolveFuncName_ColdMix(b *testing.B) {
 		reflect.ValueOf(benchFuncD).Pointer(),
 	}
 	for _, pc := range pcs {
-		_ = resolveFuncName(pc) // warm once
+		_ = resolveFuncName(pc)
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
