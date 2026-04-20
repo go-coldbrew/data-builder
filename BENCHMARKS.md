@@ -41,10 +41,10 @@ The benchmark suite lives in `benchmarks_test.go`. `make bench` runs it with
 | ---------------------------- | -------: | -------: | ---------: |
 | `GetStructName_Uncached`     |  81.28ns |  84.98ns |         ~  |
 | `CachedStructName_Hit`       |  83.79ns |  11.23ns | **-86.6%** |
-| `CachedStructName_ColdMix`   |  86.16ns |  11.46ns | **-86.7%** |
+| `CachedStructName_MixedHit`  |  86.16ns |  11.46ns | **-86.7%** |
 | `FuncForPC_Uncached`         |  32.71ns |  33.38ns |         ~  |
 | `ResolveFuncName_Hit`        |  32.60ns |  12.07ns | **-63.0%** |
-| `ResolveFuncName_ColdMix`    |  30.90ns |  12.13ns | **-60.7%** |
+| `ResolveFuncName_MixedHit`   |  30.90ns |  12.13ns | **-60.7%** |
 | `AddBuilders`                |  3.950µs |  2.300µs | **-41.8%** |
 | `AddBuilders_ColdCache`      |  8.089µs | 10.357µs |    +28.1%  |
 | `Compile`                    |  6.920µs |  7.006µs |         ~  |
@@ -60,7 +60,7 @@ The benchmark suite lives in `benchmarks_test.go`. `make bench` runs it with
 | Benchmark               | Before   | After   | Δ B/op     | Δ allocs/op |
 | ----------------------- | -------: | ------: | ---------: | ----------: |
 | `CachedStructName_Hit`  |      48B |      0B |   **-100%** |   **-100%** |
-| `CachedStructName_ColdMix` |   51B |      0B |   **-100%** |   **-100%** |
+| `CachedStructName_MixedHit` |  51B |      0B |   **-100%** |   **-100%** |
 | `AddBuilders`           |   1872B |    928B |    -50.4%  |    -59.4%   |
 | `Compile`               |   4328B |   4266B |     -1.4%  |     -2.2%   |
 | `RunParallel_Workers1`  |   4945B |   4695B |     -5.1%  |     -6.3%   |
@@ -113,10 +113,13 @@ observable in practice — it's included only to pin the worst-case cost.
 ## Caveats
 
 - `sync.Map` has higher per-op overhead than a plain `map` when the working
-  set is tiny **and** purely single-threaded. The `_ColdMix` benchmarks
-  are intentionally small (5 types / 4 PCs) to stress this path; they
-  still show ~85-87% wins, because `PkgPath()+Name()` and `FuncForPC`
-  dominate the miss cost.
+  set is tiny **and** purely single-threaded. The `_MixedHit` benchmarks
+  are intentionally small (5 types / 4 PCs) and pre-warm the cache before
+  timing, so they measure mixed-key lookup overhead on a tiny hot set
+  rather than true cold misses. They still show ~85–87% wins, because
+  caching avoids repeated `PkgPath()+Name()` and `FuncForPC` work even in
+  that small-set regime. True cold-miss behavior is captured end-to-end by
+  `AddBuilders_ColdCache`, which resets both caches every iteration.
 - Absolute numbers depend on CPU, OS scheduler, and the number of distinct
   types/builders the program touches. Don't generalize — re-measure in
   the target deployment if it matters.

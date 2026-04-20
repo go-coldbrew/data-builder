@@ -61,7 +61,7 @@ func BenchmarkCachedStructName_Hit(b *testing.B) {
 	}
 }
 
-func BenchmarkCachedStructName_ColdMix(b *testing.B) {
+func BenchmarkCachedStructName_MixedHit(b *testing.B) {
 	types := []reflect.Type{
 		reflect.TypeOf(benchStructIn{}),
 		reflect.TypeOf(benchStructA{}),
@@ -100,7 +100,7 @@ func BenchmarkResolveFuncName_Hit(b *testing.B) {
 	}
 }
 
-func BenchmarkResolveFuncName_ColdMix(b *testing.B) {
+func BenchmarkResolveFuncName_MixedHit(b *testing.B) {
 	pcs := []uintptr{
 		reflect.ValueOf(benchFuncA).Pointer(),
 		reflect.ValueOf(benchFuncB).Pointer(),
