@@ -81,7 +81,7 @@ func (p *plan) RunParallel(ctx context.Context, workers uint, initData ...any) (
 		if t.Kind() != reflect.Struct {
 			return nil, ErrInvalidBuilderInput
 		}
-		name := getStructName(t)
+		name := cachedStructName(t)
 		if initialData.Has(name) {
 			return nil, ErrMultipleInitialData
 		}
@@ -194,7 +194,7 @@ func doWorkAndGetResult(ctx context.Context, builders []*builder, dataMap map[st
 			continue
 		}
 		// add result
-		name := getStructName(outputs[0].Type())
+		name := cachedStructName(outputs[0].Type())
 		dataMap[name] = outputs[0].Interface()
 	}
 	return joinErrors(errs)
@@ -252,7 +252,7 @@ func (r Result) Get(obj any) any {
 	if t.Kind() != reflect.Struct {
 		return nil
 	}
-	name := getStructName(t)
+	name := cachedStructName(t)
 	if value, ok := r[name]; ok {
 		return value
 	}
