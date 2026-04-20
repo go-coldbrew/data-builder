@@ -13,6 +13,54 @@
 import "github.com/go-coldbrew/data-builder"
 ```
 
+Package databuilder compiles a set of builder functions into an execution plan with automatic dependency resolution, then runs them sequentially or in parallel.
+
+### Builder functions
+
+A builder is a plain Go function whose signature encodes its inputs and output as types:
+
+```
+func(ctx context.Context, in1 StructA, in2 StructB) (StructC, error)
+```
+
+Rules enforced by [IsValidBuilder](<#IsValidBuilder>):
+
+- The first parameter must be context.Context.
+- All remaining parameters must be concrete struct values \(no pointers, no variadics, no primitives\).
+- The function must return exactly two values: a concrete struct and an error.
+- Two registered builders cannot produce the same output struct.
+- A builder cannot take its own output type as input.
+
+Types are identified by their fully qualified "pkgpath.TypeName", so the dependency graph is built entirely from ordinary Go type information.
+
+### Typical flow
+
+1. Build a [DataBuilder](<#DataBuilder>) with [New](<#New>).
+2. Register builder functions with \[DataBuilder.AddBuilders\].
+3. Call \[DataBuilder.Compile\] with zero\-valued instances of the structs the caller will supply at runtime. Compile topologically sorts the builders into stages, returning a [Plan](<#Plan>).
+4. Run the plan with \[Plan.Run\] \(sequential\) or \[Plan.RunParallel\] \(bounded worker pool\). Both return a [Result](<#Result>).
+5. Read typed outputs from the result with [Result.Get](<#Result.Get>) or [GetFromResult](<#GetFromResult>) from inside a builder.
+
+A compiled [Plan](<#Plan>) is side\-effect free and safe to reuse across goroutines. \[Plan.Replace\] can swap a builder for a compatible one without recompiling, as long as the replacement's inputs are a subset of the original's.
+
+### Parallelism
+
+\[Plan.RunParallel\] runs all builders in the same stage of the DAG concurrently, bounded by a caller\-supplied worker count. A panic or error from any builder is surfaced back to the caller; subsequent stages do not start. Use [MaxPlanParallelism](<#MaxPlanParallelism>) to size the worker pool to the widest stage.
+
+### Performance
+
+Function\-name \(runtime.FuncForPC\) and struct\-name \(reflect.Type\) resolutions are cached in process\-global sync.Maps. Keys are stable for the life of the program, so the caches never evict. Hot\-path effects \(benchstat, count=6\):
+
+- Result.Get: \~4x faster single\-threaded, \~11x faster under parallel load, zero allocations on hit.
+- AddBuilders \(warm cache\): \~40% faster, \~60% fewer allocations.
+- Per\-resolution hits: \~10\-15 ns/op, zero allocations.
+
+Benchmarks live in benchmarks\_test.go; run \`make bench\` to measure on your hardware.
+
+### Visualization
+
+[BuildGraph](<#BuildGraph>) renders the compiled plan to a graphviz file in any format graphviz supports \(png, svg, dot, ...\). Graphviz must be installed on the system.
+
 ## Index
 
 - [Constants](<#constants>)
@@ -78,7 +126,7 @@ var ErrWTF = errors.New("what a terrible failure: this is likely a bug in depend
 ```
 
 <a name="AddResultToCtx"></a>
-## func [AddResultToCtx](<https://github.com/go-coldbrew/data-builder/blob/main/context.go#L17>)
+## func AddResultToCtx
 
 ```go
 func AddResultToCtx(ctx context.Context, r Result) context.Context
@@ -89,7 +137,7 @@ AddResultToCtx adds the given result object to context
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj will NOT persist
 
 <a name="BuildGraph"></a>
-## func [BuildGraph](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L319>)
+## func BuildGraph
 
 ```go
 func BuildGraph(executionPlan Plan, format, file string) error
@@ -98,7 +146,7 @@ func BuildGraph(executionPlan Plan, format, file string) error
 BuildGraph helps understand the execution plan, it renders the plan in the given format please note we depend on graphviz, please ensure you have graphviz installed
 
 <a name="GetFromResult"></a>
-## func [GetFromResult](<https://github.com/go-coldbrew/data-builder/blob/main/context.go#L44>)
+## func GetFromResult
 
 ```go
 func GetFromResult(ctx context.Context, obj any) any
@@ -109,7 +157,7 @@ GetFromResult allows builders to access data built by other builders
 this function enables optional access to data, your code should not rely on values being present, if you have explicit dependency please add them to your function parameters
 
 <a name="IsValidBuilder"></a>
-## func [IsValidBuilder](<https://github.com/go-coldbrew/data-builder/blob/main/databuilder.go#L94>)
+## func IsValidBuilder
 
 ```go
 func IsValidBuilder(builder any) error
@@ -118,7 +166,7 @@ func IsValidBuilder(builder any) error
 IsValidBuilder checks if the given function is valid or not
 
 <a name="MaxPlanParallelism"></a>
-## func [MaxPlanParallelism](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L331>)
+## func MaxPlanParallelism
 
 ```go
 func MaxPlanParallelism(pl Plan) (uint, error)
@@ -129,7 +177,7 @@ MaxPlanParallelism return the maximum number of buildes that can be exsecuted pa
 this number does not take into account if the builder are cpu intensive or netwrok intensive it may not be benificial to run builders at max parallelism if they are cpu intensive
 
 <a name="DataBuilder"></a>
-## type [DataBuilder](<https://github.com/go-coldbrew/data-builder/blob/main/types.go#L36-L42>)
+## type DataBuilder
 
 DataBuilder is the interface for DataBuilder
 
@@ -293,7 +341,7 @@ welcome to singapore
 </details>
 
 <a name="New"></a>
-### func [New](<https://github.com/go-coldbrew/data-builder/blob/main/databuilder.go#L178>)
+### func New
 
 ```go
 func New() DataBuilder
@@ -302,7 +350,7 @@ func New() DataBuilder
 New Creates a new DataBuilder
 
 <a name="Plan"></a>
-## type [Plan](<https://github.com/go-coldbrew/data-builder/blob/main/types.go#L45-L52>)
+## type Plan
 
 Plan is the interface that wraps execution of Plans created by DataBuilder.Compile method.
 
@@ -367,7 +415,7 @@ true
 </details>
 
 <a name="Result"></a>
-## type [Result](<https://github.com/go-coldbrew/data-builder/blob/main/types.go#L55>)
+## type Result
 
 Result is the result of the Plan.Run method
 
@@ -376,7 +424,7 @@ type Result map[string]any
 ```
 
 <a name="GetResultFromCtx"></a>
-### func [GetResultFromCtx](<https://github.com/go-coldbrew/data-builder/blob/main/context.go#L28>)
+### func GetResultFromCtx
 
 ```go
 func GetResultFromCtx(ctx context.Context) Result
@@ -387,7 +435,7 @@ GetResultFromCtx gives access to result object at this point in execution
 this function should ideally only be used in your tests and/or for debugging modification made to Result obj may or may not persist
 
 <a name="Result.Get"></a>
-### func \(Result\) [Get](<https://github.com/go-coldbrew/data-builder/blob/main/plan.go#L247>)
+### func \(Result\) Get
 
 ```go
 func (r Result) Get(obj any) any
