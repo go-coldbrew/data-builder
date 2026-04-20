@@ -46,9 +46,11 @@ func BenchmarkGetStructName_Uncached(b *testing.B) {
 	t := reflect.TypeOf(benchStructA{})
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got string
 	for i := 0; i < b.N; i++ {
-		_ = uncachedStructName(t)
+		got = uncachedStructName(t)
 	}
+	runtime.KeepAlive(got)
 }
 
 func BenchmarkCachedStructName_Hit(b *testing.B) {
@@ -56,9 +58,11 @@ func BenchmarkCachedStructName_Hit(b *testing.B) {
 	_ = cachedStructName(t)
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got string
 	for i := 0; i < b.N; i++ {
-		_ = cachedStructName(t)
+		got = cachedStructName(t)
 	}
+	runtime.KeepAlive(got)
 }
 
 func BenchmarkCachedStructName_MixedHit(b *testing.B) {
@@ -74,9 +78,11 @@ func BenchmarkCachedStructName_MixedHit(b *testing.B) {
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got string
 	for i := 0; i < b.N; i++ {
-		_ = cachedStructName(types[i%len(types)])
+		got = cachedStructName(types[i%len(types)])
 	}
+	runtime.KeepAlive(got)
 }
 
 // --- function PC resolution ---
@@ -85,9 +91,11 @@ func BenchmarkFuncForPC_Uncached(b *testing.B) {
 	pc := reflect.ValueOf(benchFuncA).Pointer()
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got string
 	for i := 0; i < b.N; i++ {
-		_ = runtime.FuncForPC(pc).Name()
+		got = runtime.FuncForPC(pc).Name()
 	}
+	runtime.KeepAlive(got)
 }
 
 func BenchmarkResolveFuncName_Hit(b *testing.B) {
@@ -95,9 +103,11 @@ func BenchmarkResolveFuncName_Hit(b *testing.B) {
 	_ = resolveFuncName(pc)
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got string
 	for i := 0; i < b.N; i++ {
-		_ = resolveFuncName(pc)
+		got = resolveFuncName(pc)
 	}
+	runtime.KeepAlive(got)
 }
 
 func BenchmarkResolveFuncName_MixedHit(b *testing.B) {
@@ -112,9 +122,11 @@ func BenchmarkResolveFuncName_MixedHit(b *testing.B) {
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got string
 	for i := 0; i < b.N; i++ {
-		_ = resolveFuncName(pcs[i%len(pcs)])
+		got = resolveFuncName(pcs[i%len(pcs)])
 	}
+	runtime.KeepAlive(got)
 }
 
 // --- registration ---
@@ -213,9 +225,11 @@ func BenchmarkResultGet(b *testing.B) {
 	key := benchStructC{}
 	b.ReportAllocs()
 	b.ResetTimer()
+	var got any
 	for i := 0; i < b.N; i++ {
-		_ = result.Get(key)
+		got = result.Get(key)
 	}
+	runtime.KeepAlive(got)
 }
 
 func BenchmarkResultGet_Parallel(b *testing.B) {
@@ -228,8 +242,10 @@ func BenchmarkResultGet_Parallel(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
+		var got any
 		for pb.Next() {
-			_ = result.Get(key)
+			got = result.Get(key)
 		}
+		runtime.KeepAlive(got)
 	})
 }
